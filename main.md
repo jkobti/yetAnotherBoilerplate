@@ -38,6 +38,7 @@ These are the infrastructure-level components deployed into the Kubernetes clust
 - **Authentication:** A self-hosted identity service like Keycloak.
 - **Secrets Management:** A controller for Sealed Secrets or an internal Vault instance.
 - **Object Storage:** An S3-compatible object storage service (e.g., MinIO).
+- **Ingress Controller:** A dedicated controller (e.g., NGINX, Traefik) to manage routing rules, enabling features like host-based routing for different domains.
 
 ### 2. Backend Application Components
 
@@ -287,4 +288,16 @@ Testing tip
 - Use `CELERY_TASK_ALWAYS_EAGER = True` in test settings to run tasks synchronously during unit tests.
 
 If you want, I can now scaffold a minimal runnable set (small `packages/api` with Dockerfile, `docker-compose.yml`, and a test). That gives us a quick playground to iterate on actual code — say "scaffold" and I'll create it.
+
+## Networking and Routing
+
+The cluster uses an Ingress Controller to manage external traffic. This provides a powerful and flexible way to route requests to the correct services based on domain names or URL paths.
+
+-   **Multi-Domain Strategy:** You can assign separate domains to different components. For example:
+    -   `app.yourdomain.com` can route to the frontend web application.
+    -   `api.yourdomain.com` can route to the backend API.
+-   **Pluggable Technology:** The boilerplate is not tied to a single Ingress technology. You can choose the one that best fits your needs, such as:
+    -   **NGINX Ingress Controller:** A popular and robust choice.
+    -   **Traefik:** Known for its ease of use and automatic service discovery.
+-   **TLS Termination:** The Ingress is the ideal place to handle TLS, terminating encrypted traffic before it reaches your services. This is typically managed by `cert-manager`, which can automatically provision SSL certificates.
 
