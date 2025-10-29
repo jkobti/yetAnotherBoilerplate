@@ -1,4 +1,4 @@
-## boiler — Project boilerplate documentation
+## Boiler
 
 This document is the starting point for the `boiler` project — a reusable, production-ready boilerplate that you can use as the foundation for future projects.
 
