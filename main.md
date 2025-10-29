@@ -200,3 +200,61 @@ Quick next-step options:
 
 If you'd like me to scaffold the Django project, tell me whether you prefer Django REST Framework (DRF) for APIs and whether you want Celery/Redis for background workers. I can start scaffolding that right away.
 
+## Connecting the backend to Celery workers (minimal)
+
+Keep this lightweight while we iterate. The following is intentionally small so you can change it quickly.
+
+What you need (very short):
+- A broker (Redis or RabbitMQ) reachable by both web and workers.
+- A tiny Celery entrypoint in your backend package.
+- A worker process that runs the Celery worker command.
+
+Minimal Django example — `packages/api/celery.py`:
+
+```python
+import os
+from celery import Celery
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
+app = Celery('api')
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()
+```
+
+One-line task example (`packages/api/tasks.py`):
+
+```python
+from celery import shared_task
+
+@shared_task
+def add(a, b):
+		return a + b
+```
+
+Minimal docker-compose (local dev):
+
+```yaml
+version: '3.8'
+services:
+	api:
+		build: ./packages/api
+		environment:
+			- CELERY_BROKER_URL=redis://redis:6379/0
+
+	redis:
+		image: redis:7-alpine
+
+	worker:
+		build: ./packages/api
+		command: celery -A api.celery worker --loglevel=info
+		depends_on: [redis]
+```
+
+Very brief Helm note
+- Run workers as a separate Deployment and expose a `workers.enabled` value in your chart. Keep the values minimal (image, replicas, command, env).
+
+Testing tip
+- Use `CELERY_TASK_ALWAYS_EAGER = True` in test settings to run tasks synchronously during unit tests.
+
+If you want, I can now scaffold a minimal runnable set (small `packages/api` with Dockerfile, `docker-compose.yml`, and a test). That gives us a quick playground to iterate on actual code — say "scaffold" and I'll create it.
+
