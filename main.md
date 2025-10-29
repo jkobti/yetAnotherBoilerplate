@@ -49,9 +49,10 @@ These are the features built into the server-side application code (e.g., the Dj
 - **API Service:** The primary REST/GraphQL endpoint (e.g., Django).
 - **Database Migrations:** Code-managed schema changes (e.g., via Django ORM).
 - **API Rate Limiting:** Default configuration to prevent abuse.
+- **Email Integration:** Transactional email support (via Django-Anymail) for password resets, user verification, and notifications. Supports multiple providers (Resend, Postmark, SendGrid) via environment variable configuration.
 
 **Optional Backend Features:**
-- **Worker Processes:** For running background jobs (e.g., Celery for asynchronous tasks).
+- **Worker Processes:** For running background jobs (e.g., Celery for asynchronous tasks). Useful for sending emails asynchronously to avoid blocking API responses.
 - **Real-time Communication (WebSockets):** Django Channels for persistent, bidirectional connections enabling live notifications, chat, collaborative editing, and real-time dashboards.
 - **Object Storage Integration:** An adapter to communicate with an S3-compatible service.
 - **Authentication Logic:** Server-side implementation of OAuth/OIDC flows.
@@ -291,6 +292,46 @@ Testing tip
 - Use `CELERY_TASK_ALWAYS_EAGER = True` in test settings to run tasks synchronously during unit tests.
 
 If you want, I can now scaffold a minimal runnable set (small `packages/api` with Dockerfile, `docker-compose.yml`, and a test). That gives us a quick playground to iterate on actual code — say "scaffold" and I'll create it.
+
+## Email Integration
+
+Transactional email support is essential for user authentication flows (password resets, email verification), notifications, and other critical communications. The boilerplate includes email integration as a core backend feature.
+
+### Stack Integration
+
+**Django-Anymail:**
+- Provides a unified API for transactional email providers (Resend, Postmark, SendGrid, Mailgun, Amazon SES, etc.).
+- Switch providers by changing environment variables—no code changes required.
+- Supports templates, tracking, attachments, and webhooks.
+
+**Configuration via Environment Variables:**
+- `EMAIL_BACKEND`: The Django email backend to use.
+- `ANYMAIL_API_KEY`: The API key for your chosen provider.
+- `DEFAULT_FROM_EMAIL`: The default sender address.
+
+**Helm Configuration:**
+- Store email configuration in Helm values (backend, from email).
+- Store API keys in Kubernetes secrets for security.
+- Reference secrets in deployment environment variables.
+
+### Common Use Cases
+
+- **Password Reset:** Users receive a secure link to reset their password.
+- **Email Verification:** New users verify their email address before accessing the app.
+- **Notifications:** Send alerts about account activity, system updates, or user-triggered events.
+- **Welcome Emails:** Onboard new users with a welcome message and getting-started guide.
+
+### Asynchronous Email Sending
+
+For production environments, send emails asynchronously to avoid blocking API responses using Celery workers (already part of the optional backend features). Django-Anymail integrates seamlessly with Celery for async email delivery.
+
+### Local Development
+
+For local development, use Django's console backend to print emails to stdout, or use a local SMTP server like MailHog or Mailpit for testing.
+
+### Provider Switching
+
+Switching providers requires only updating environment variables in your Helm values or Kubernetes configuration—no code changes needed.
 
 ## Real-time Communication with WebSockets
 
