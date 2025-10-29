@@ -51,6 +51,7 @@ These are the features built into the server-side application code (e.g., the Dj
 
 **Optional Backend Features:**
 - **Worker Processes:** For running background jobs (e.g., Celery for asynchronous tasks).
+- **Real-time Communication (WebSockets):** Django Channels for persistent, bidirectional connections enabling live notifications, chat, collaborative editing, and real-time dashboards.
 - **Object Storage Integration:** An adapter to communicate with an S3-compatible service.
 - **Authentication Logic:** Server-side implementation of OAuth/OIDC flows.
 - **Feature Flag Integration:** Logic to check feature flags from a service like LaunchDarkly.
@@ -68,6 +69,7 @@ These are the features built into the client-side application code (Flutter for 
 - **Authentication Flow:** UI components for login, logout, and user session management.
 - **Feature Flag Integration:** Client-side logic to show/hide features based on flags.
 - **Push Notifications:** Integration with Firebase Cloud Messaging (FCM) for push notifications.
+- **WebSocket Client:** Flutter WebSocket implementation for real-time communication with the backend (for chat, live notifications, collaborative features).
 - **Direct Object Storage Access:** Support for direct uploads/downloads to an object storage service using pre-signed URLs provided by the backend.
 
 ## Activation / Deactivation strategy
@@ -288,6 +290,43 @@ Testing tip
 - Use `CELERY_TASK_ALWAYS_EAGER = True` in test settings to run tasks synchronously during unit tests.
 
 If you want, I can now scaffold a minimal runnable set (small `packages/api` with Dockerfile, `docker-compose.yml`, and a test). That gives us a quick playground to iterate on actual code — say "scaffold" and I'll create it.
+
+## Real-time Communication with WebSockets
+
+Modern applications often require instant, bidirectional communication between the server and clients. This is essential for features like live chat, real-time notifications, collaborative editing, live dashboards, and multiplayer features.
+
+Unlike traditional HTTP request-response or polling patterns, WebSockets provide a persistent connection that allows the server to push updates to clients immediately.
+
+### Stack Integration
+
+**Backend (Django Channels):**
+- Django Channels extends Django to handle WebSockets, HTTP2, and other async protocols.
+- Runs on an ASGI server (e.g., Daphne or Uvicorn) instead of traditional WSGI.
+- Uses Redis (which you already have for Celery) as the "channel layer" for message passing between server instances.
+
+**Frontend (Flutter):**
+- Use the `web_socket_channel` package for WebSocket connections.
+- Handle reconnection logic and authentication token passing.
+
+### Kubernetes Configuration
+
+**Ingress annotations for WebSocket support** (NGINX example):
+- `nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"`
+- `nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"`
+- `nginx.ingress.kubernetes.io/use-forwarded-headers: "true"`
+- `nginx.ingress.kubernetes.io/websocket-services: "api-service"`
+
+### Enable/Disable Strategy
+
+Use Helm values to control WebSocket deployment:
+- Set `api.websockets.enabled: true` in values to enable WebSocket support.
+- When enabled, deploy with Daphne (ASGI); when disabled, use Gunicorn (WSGI).
+
+### Performance Considerations
+
+- **Scaling:** WebSocket connections are stateful. Use sticky sessions or a shared channel layer (Redis) to allow horizontal scaling.
+- **Connection limits:** Monitor and set appropriate limits per pod.
+- **Graceful shutdown:** Ensure proper WebSocket closure during pod termination.
 
 ## Networking and Routing
 
