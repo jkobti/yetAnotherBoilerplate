@@ -35,7 +35,7 @@ Optional / recommended components:
 - Auth & identity: OAuth/OIDC integration or an Auth service (e.g., Keycloak, Auth0)
 - Caching layer: Redis
 - Object storage adapter: S3-compatible
-- Observability: Prometheus, Grafana, OpenTelemetry tracing
+- Observability: In-cluster monitoring with Prometheus, Grafana, and OpenTelemetry; client-side error reporting via Sentry integration.
 - Logging: Fluentd/Fluent Bit or Loki
 - Secrets management: external store (Vault, AWS Secrets Manager) or sealed-secrets
 - Feature flags: LaunchDarkly or open-source alternatives
@@ -149,6 +149,7 @@ Notes:
 ## Observability & Security
 
 - Include optional charts for Prometheus, Grafana, and OpenTelemetry. Provide an example `values.yaml` to enable them.
+- Sentry is configured directly in the frontend application code, typically via build-time environment variables for the DSN.
 - Use TLS via cert-manager for ingress.
 - Recommend secrets stored in an external system (Vault) or use sealed-secrets for GitOps workflows.
 
@@ -190,7 +191,7 @@ Please tell me which next step you'd like to tackle first.
 
 ## Chosen stack (summary)
 
-- Frontend: Flutter for web, iOS, and Android.
+- Frontend: Flutter for web, iOS, and Android, with Sentry for error reporting configured by default.
 - Backend: Django as the recommended backend framework. Primary persistence: PostgreSQL via Django ORM. Optional MongoDB integrations are supported via separate services or community libraries. Configure which DB type to use via `DB_TYPE` env var or Helm `db.type` value.
 
 Quick next-step options:
