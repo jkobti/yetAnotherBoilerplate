@@ -187,3 +187,16 @@ If you'd like, I can now:
 
 Please tell me which next step you'd like to tackle first.
 
+
+## Chosen stack (summary)
+
+- Frontend: Flutter for web, iOS, and Android.
+- Backend: Django as the recommended backend framework. Primary persistence: PostgreSQL via Django ORM. Optional MongoDB integrations are supported via separate services or community libraries. Configure which DB type to use via `DB_TYPE` env var or Helm `db.type` value.
+
+Quick next-step options:
+
+1. Scaffold `packages/flutter/` and a `packages/api/` Django project with Postgres configuration and migration placeholders; optionally scaffold a small Mongo-backed microservice if you want Mongo examples.
+2. Add Helm chart/value examples and a `k8s/` overlay to show toggling DB type and enabling/disabling frontend components.
+
+If you'd like me to scaffold the Django project, tell me whether you prefer Django REST Framework (DRF) for APIs and whether you want Celery/Redis for background workers. I can start scaffolding that right away.
+
