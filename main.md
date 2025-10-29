@@ -37,6 +37,7 @@ These are the infrastructure-level components deployed into the Kubernetes clust
 - **Observability:** Prometheus for metrics collection, Grafana for dashboards, and an OpenTelemetry collector for traces.
 - **Authentication:** A self-hosted identity service like Keycloak.
 - **Secrets Management:** A controller for Sealed Secrets or an internal Vault instance.
+- **Object Storage:** An S3-compatible object storage service (e.g., MinIO).
 
 ### 2. Backend Application Components
 
@@ -65,6 +66,7 @@ These are the features built into the client-side application code (Flutter for 
 - **Authentication Flow:** UI components for login, logout, and user session management.
 - **Feature Flag Integration:** Client-side logic to show/hide features based on flags.
 - **Push Notifications:** Integration with Firebase Cloud Messaging (FCM) for push notifications.
+- **Direct Object Storage Access:** Support for direct uploads/downloads to an object storage service using pre-signed URLs provided by the backend.
 
 ## Activation / Deactivation strategy
 
