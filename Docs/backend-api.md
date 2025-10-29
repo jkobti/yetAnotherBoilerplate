@@ -137,6 +137,8 @@ These features can be enabled based on project requirements:
 
 **Best Practice:** Generate pre-signed URLs for direct client uploads/downloads to reduce server load.
 
+**Service Authentication:** Require TLS everywhere. Issue service certificates via cluster cert-manager so frontend-to-backend traffic (including WebSockets) uses mTLS when deployed inside the cluster or through the ingress.
+
 ### 4.4 Authentication & Authorization
 
 **Options:**

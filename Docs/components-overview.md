@@ -15,7 +15,7 @@ This sheet summarizes the major components included in the boiler project and hi
 | Platform | Authentication (Keycloak)                                                       | ⚙️ Optional | Self-hosted identity provider for SSO/OIDC flows.                                      | `Docs/k8s.md` |
 | Platform | Secrets management (Sealed Secrets / Vault)                                     | ⚙️ Optional | GitOps-friendly or centralized secret storage.                                         | `Docs/k8s.md` |
 | Platform | Object storage (S3-compatible / MinIO)                                          | ⚙️ Optional | Binary asset storage for uploads, static media, CDN sources.                           | `Docs/k8s.md` |
-| Platform | Ingress controller (NGINX/Traefik)                                              | ✅          | Host/path-based routing, TLS termination, WebSocket support.                           | `Docs/k8s.md` |
+| Platform | Ingress controller (NGINX/Traefik) + cert-manager                               | ✅          | Host/path routing plus TLS/mTLS certificates for secure component auth.                | `Docs/k8s.md` |
 
 ## Backend Application Stack
 

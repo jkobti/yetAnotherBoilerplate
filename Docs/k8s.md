@@ -106,7 +106,7 @@ Notes:
 
 - Ship optional charts for Prometheus, Grafana, and OpenTelemetry, controlled via Helm values.
 - Configure Sentry in frontend builds through environment variables (DSNs) supplied at build time.
-- Use cert-manager to manage TLS for ingress resources.
+- Use cert-manager to manage TLS for ingress resources and issue mutual-auth certificates when services authenticate directly (e.g., frontend → backend mTLS).
 - Store secrets in external systems (Vault, cloud secret managers) or use sealed-secrets for GitOps-friendly workflows.
 
 ## 7. Component Onboarding Checklist
