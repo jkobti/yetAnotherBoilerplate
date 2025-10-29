@@ -18,27 +18,52 @@ The goal: define a flexible, modular starter that supports frontend and backend 
 - Developer experience: easy local development, clear workflows, and reproducible builds.
 - Secure by default: encourage secrets management, TLS, least-privilege RBAC, and CI security checks.
 
-## Components (required vs optional)
+## Components by Layer
 
-Core components (commonly required):
+To clarify responsibilities, components are broken down by where they live: the underlying platform (Kubernetes), the backend services, and the frontend clients.
 
-- Backend API: REST/GraphQL service (Node/Python/Go etc.)
-- Database: PostgreSQL (primary example), with migrations
-- Frontend Web App: single-page app (React/Vue/Svelte)
-- CI/CD pipeline: build/test/publish and deploy to Kubernetes
-- Kubernetes manifests / Helm charts: deployment, service, ingress, configmaps, secrets
+### 1. Platform & In-Cluster Services
 
-Optional / recommended components:
+These are the infrastructure-level components deployed into the Kubernetes cluster, typically managed via Helm or Kustomize. They provide the runtime environment for your applications.
 
-- Mobile apps: iOS (Swift) and Android (Kotlin) — treat as separate apps but share API contracts
-- Worker / background processors (e.g., queue consumers, cron jobs)
-- Auth & identity: OAuth/OIDC integration or an Auth service (e.g., Keycloak, Auth0)
-- Caching layer: Redis
-- Object storage adapter: S3-compatible
-- Observability: In-cluster monitoring with Prometheus, Grafana, and OpenTelemetry; client-side error reporting via Sentry integration.
-- Logging: Fluentd/Fluent Bit or Loki
-- Secrets management: external store (Vault, AWS Secrets Manager) or sealed-secrets
-- Feature flags: LaunchDarkly or open-source alternatives
+**Core Platform Services:**
+- **Kubernetes Base:** Deployments, Services, Ingresses, ConfigMaps, and Secrets forming the foundation for running apps.
+- **CI/CD Pipeline:** The automated system for building, testing, and deploying all components.
+
+**Optional Platform Services:**
+- **Database:** PostgreSQL running as a stateful service within the cluster.
+- **Caching:** Redis for in-memory caching.
+- **Logging:** A cluster-wide logging aggregator like Loki or Fluentd.
+- **Observability:** Prometheus for metrics collection, Grafana for dashboards, and an OpenTelemetry collector for traces.
+- **Authentication:** A self-hosted identity service like Keycloak.
+- **Secrets Management:** A controller for Sealed Secrets or an internal Vault instance.
+
+### 2. Backend Application Components
+
+These are the features built into the server-side application code (e.g., the Django API and Celery workers).
+
+**Core Backend Features:**
+- **API Service:** The primary REST/GraphQL endpoint (e.g., Django).
+- **Database Migrations:** Code-managed schema changes (e.g., via Django ORM).
+
+**Optional Backend Features:**
+- **Worker Processes:** For running background jobs (e.g., Celery for asynchronous tasks).
+- **Object Storage Integration:** An adapter to communicate with an S3-compatible service.
+- **Authentication Logic:** Server-side implementation of OAuth/OIDC flows.
+- **Feature Flag Integration:** Logic to check feature flags from a service like LaunchDarkly.
+
+### 3. Frontend Application Components
+
+These are the features built into the client-side application code (Flutter for web, iOS, and Android).
+
+**Core Frontend Features:**
+- **UI Framework:** Flutter for cross-platform web, iOS, and Android development.
+- **API Client:** Logic for communicating with the backend API.
+
+**Optional Frontend Features:**
+- **Error Reporting:** Sentry integration for capturing and reporting client-side exceptions.
+- **Authentication Flow:** UI components for login, logout, and user session management.
+- **Feature Flag Integration:** Client-side logic to show/hide features based on flags.
 
 ## Activation / Deactivation strategy
 
