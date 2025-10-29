@@ -43,20 +43,7 @@ These are the infrastructure-level components deployed into the Kubernetes clust
 
 ### 2. Backend Application Components
 
-These are the features built into the server-side application code (e.g., the Django API and Celery workers).
-
-**Core Backend Features:**
-- **API Service:** The primary REST/GraphQL endpoint (e.g., Django).
-- **Database Migrations:** Code-managed schema changes (e.g., via Django ORM).
-- **API Rate Limiting:** Default configuration to prevent abuse.
-- **Email Integration:** Transactional email support (via Django-Anymail) for password resets, user verification, and notifications. Supports multiple providers (Resend, Postmark, SendGrid) via environment variable configuration.
-
-**Optional Backend Features:**
-- **Worker Processes:** For running background jobs (e.g., Celery for asynchronous tasks). Useful for sending emails asynchronously to avoid blocking API responses.
-- **Real-time Communication (WebSockets):** Django Channels for persistent, bidirectional connections enabling live notifications, chat, collaborative editing, and real-time dashboards.
-- **Object Storage Integration:** An adapter to communicate with an S3-compatible service.
-- **Authentication Logic:** Server-side implementation of OAuth/OIDC flows.
-- **Feature Flag Integration:** Logic to check feature flags from a service like LaunchDarkly.
+The server-side stack centers on Django + DRF backed by PostgreSQL. Treat migrations, rate limiting, and email integrations as baseline capabilities, and layer in workers, realtime transport, and storage adapters as needed. Refer to `Docs/backend-api.md` for the authoritative breakdown of required features, optional add-ons, and configuration guidance.
 
 ### 3. Frontend Application Components
 
@@ -87,10 +74,11 @@ We want a few consistent, low-effort ways to enable or disable components across
 	```yaml
 	mobile:
 		enabled: false
-
 	workers:
 		enabled: true
 	```
+
+Backend features such as Celery workers, transactional email, and WebSocket support are covered in-depth in `Docs/backend-api.md`; reference that document when enabling those capabilities.
 
 - Each chart's templates should guard resource creation with `{{- if .Values.<component>.enabled }}` checks.
 
@@ -222,7 +210,6 @@ If you'd like, I can now:
 
 Please tell me which next step you'd like to tackle first.
 
-
 ## Chosen stack (summary)
 
 - Frontend: Flutter for web, iOS, and Android, with Sentry for error reporting configured by default and Firebase for push notifications.
@@ -234,141 +221,6 @@ Quick next-step options:
 2. Add Helm chart/value examples and a `k8s/` overlay to show toggling DB type and enabling/disabling frontend components.
 
 If you'd like me to scaffold the Django project, tell me whether you prefer Django REST Framework (DRF) for APIs and whether you want Celery/Redis for background workers. I can start scaffolding that right away.
-
-## Connecting the backend to Celery workers (minimal)
-
-Keep this lightweight while we iterate. The following is intentionally small so you can change it quickly.
-
-What you need (very short):
-- A broker (Redis or RabbitMQ) reachable by both web and workers.
-- A tiny Celery entrypoint in your backend package.
-- A worker process that runs the Celery worker command.
-
-Minimal Django example — `packages/api/celery.py`:
-
-```python
-import os
-from celery import Celery
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
-app = Celery('api')
-app.config_from_object('django.conf:settings', namespace='CELERY')
-app.autodiscover_tasks()
-```
-
-One-line task example (`packages/api/tasks.py`):
-
-```python
-from celery import shared_task
-
-@shared_task
-def add(a, b):
-		return a + b
-```
-
-Minimal docker-compose (local dev):
-
-```yaml
-version: '3.8'
-services:
-	api:
-		build: ./packages/api
-		environment:
-			- CELERY_BROKER_URL=redis://redis:6379/0
-
-	redis:
-		image: redis:7-alpine
-
-	worker:
-		build: ./packages/api
-		command: celery -A api.celery worker --loglevel=info
-		depends_on: [redis]
-```
-
-Very brief Helm note
-- Run workers as a separate Deployment and expose a `workers.enabled` value in your chart. Keep the values minimal (image, replicas, command, env).
-
-Testing tip
-- Use `CELERY_TASK_ALWAYS_EAGER = True` in test settings to run tasks synchronously during unit tests.
-
-If you want, I can now scaffold a minimal runnable set (small `packages/api` with Dockerfile, `docker-compose.yml`, and a test). That gives us a quick playground to iterate on actual code — say "scaffold" and I'll create it.
-
-## Email Integration
-
-Transactional email support is essential for user authentication flows (password resets, email verification), notifications, and other critical communications. The boilerplate includes email integration as a core backend feature.
-
-### Stack Integration
-
-**Django-Anymail:**
-- Provides a unified API for transactional email providers (Resend, Postmark, SendGrid, Mailgun, Amazon SES, etc.).
-- Switch providers by changing environment variables—no code changes required.
-- Supports templates, tracking, attachments, and webhooks.
-
-**Configuration via Environment Variables:**
-- `EMAIL_BACKEND`: The Django email backend to use.
-- `ANYMAIL_API_KEY`: The API key for your chosen provider.
-- `DEFAULT_FROM_EMAIL`: The default sender address.
-
-**Helm Configuration:**
-- Store email configuration in Helm values (backend, from email).
-- Store API keys in Kubernetes secrets for security.
-- Reference secrets in deployment environment variables.
-
-### Common Use Cases
-
-- **Password Reset:** Users receive a secure link to reset their password.
-- **Email Verification:** New users verify their email address before accessing the app.
-- **Notifications:** Send alerts about account activity, system updates, or user-triggered events.
-- **Welcome Emails:** Onboard new users with a welcome message and getting-started guide.
-
-### Asynchronous Email Sending
-
-For production environments, send emails asynchronously to avoid blocking API responses using Celery workers (already part of the optional backend features). Django-Anymail integrates seamlessly with Celery for async email delivery.
-
-### Local Development
-
-For local development, use Django's console backend to print emails to stdout, or use a local SMTP server like MailHog or Mailpit for testing.
-
-### Provider Switching
-
-Switching providers requires only updating environment variables in your Helm values or Kubernetes configuration—no code changes needed.
-
-## Real-time Communication with WebSockets
-
-Modern applications often require instant, bidirectional communication between the server and clients. This is essential for features like live chat, real-time notifications, collaborative editing, live dashboards, and multiplayer features.
-
-Unlike traditional HTTP request-response or polling patterns, WebSockets provide a persistent connection that allows the server to push updates to clients immediately.
-
-### Stack Integration
-
-**Backend (Django Channels):**
-- Django Channels extends Django to handle WebSockets, HTTP2, and other async protocols.
-- Runs on an ASGI server (e.g., Daphne or Uvicorn) instead of traditional WSGI.
-- Uses Redis (which you already have for Celery) as the "channel layer" for message passing between server instances.
-
-**Frontend (Flutter):**
-- Use the `web_socket_channel` package for WebSocket connections.
-- Handle reconnection logic and authentication token passing.
-
-### Kubernetes Configuration
-
-**Ingress annotations for WebSocket support** (NGINX example):
-- `nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"`
-- `nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"`
-- `nginx.ingress.kubernetes.io/use-forwarded-headers: "true"`
-- `nginx.ingress.kubernetes.io/websocket-services: "api-service"`
-
-### Enable/Disable Strategy
-
-Use Helm values to control WebSocket deployment:
-- Set `api.websockets.enabled: true` in values to enable WebSocket support.
-- When enabled, deploy with Daphne (ASGI); when disabled, use Gunicorn (WSGI).
-
-### Performance Considerations
-
-- **Scaling:** WebSocket connections are stateful. Use sticky sessions or a shared channel layer (Redis) to allow horizontal scaling.
-- **Connection limits:** Monitor and set appropriate limits per pod.
-- **Graceful shutdown:** Ensure proper WebSocket closure during pod termination.
 
 ## Networking and Routing
 
