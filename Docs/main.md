@@ -47,19 +47,7 @@ The server-side stack centers on Django + DRF backed by PostgreSQL. Treat migrat
 
 ### 3. Frontend Application Components
 
-These are the features built into the client-side application code (Flutter for web, iOS, and Android).
-
-**Core Frontend Features:**
-- **UI Framework:** Flutter for cross-platform web, iOS, and Android development.
-- **API Client:** Logic for communicating with the backend API.
-
-**Optional Frontend Features:**
-- **Error Reporting:** Sentry integration for capturing and reporting client-side exceptions.
-- **Authentication Flow:** UI components for login, logout, and user session management.
-- **Feature Flag Integration:** Client-side logic to show/hide features based on flags.
-- **Push Notifications:** Integration with Firebase Cloud Messaging (FCM) for push notifications.
-- **WebSocket Client:** Flutter WebSocket implementation for real-time communication with the backend (for chat, live notifications, collaborative features).
-- **Direct Object Storage Access:** Support for direct uploads/downloads to an object storage service using pre-signed URLs provided by the backend.
+Cross-platform clients share a Flutter codebase that targets web, iOS, and Android while leaning on shared design systems and API contracts. Keep the overview here high level; implementation details, optional integrations (Sentry, feature flags, push notifications, realtime clients, direct storage access), and platform-specific notes now live in `Docs/frontend.md`.
 
 ## Activation / Deactivation strategy
 
