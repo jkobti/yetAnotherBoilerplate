@@ -64,6 +64,7 @@ These are the features built into the client-side application code (Flutter for 
 - **Error Reporting:** Sentry integration for capturing and reporting client-side exceptions.
 - **Authentication Flow:** UI components for login, logout, and user session management.
 - **Feature Flag Integration:** Client-side logic to show/hide features based on flags.
+- **Push Notifications:** Integration with Firebase Cloud Messaging (FCM) for push notifications.
 
 ## Activation / Deactivation strategy
 
@@ -216,7 +217,7 @@ Please tell me which next step you'd like to tackle first.
 
 ## Chosen stack (summary)
 
-- Frontend: Flutter for web, iOS, and Android, with Sentry for error reporting configured by default.
+- Frontend: Flutter for web, iOS, and Android, with Sentry for error reporting configured by default and Firebase for push notifications.
 - Backend: Django as the recommended backend framework. Primary persistence: PostgreSQL via Django ORM. Optional MongoDB integrations are supported via separate services or community libraries. Configure which DB type to use via `DB_TYPE` env var or Helm `db.type` value.
 
 Quick next-step options:
