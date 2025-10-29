@@ -46,6 +46,7 @@ These are the features built into the server-side application code (e.g., the Dj
 **Core Backend Features:**
 - **API Service:** The primary REST/GraphQL endpoint (e.g., Django).
 - **Database Migrations:** Code-managed schema changes (e.g., via Django ORM).
+- **API Rate Limiting:** Default configuration to prevent abuse.
 
 **Optional Backend Features:**
 - **Worker Processes:** For running background jobs (e.g., Celery for asynchronous tasks).
