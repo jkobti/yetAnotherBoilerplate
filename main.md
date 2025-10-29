@@ -38,6 +38,7 @@ These are the infrastructure-level components deployed into the Kubernetes clust
 - **Authentication:** A self-hosted identity service like Keycloak.
 - **Secrets Management:** A controller for Sealed Secrets or an internal Vault instance.
 - **Object Storage:** An S3-compatible object storage service (e.g., MinIO).
+- **Container Registry:** A private Docker registry (e.g., Harbor, Docker Registry) for storing and managing container images within the cluster.
 - **Ingress Controller:** A dedicated controller (e.g., NGINX, Traefik) to manage routing rules, enabling features like host-based routing for different domains.
 
 ### 2. Backend Application Components
