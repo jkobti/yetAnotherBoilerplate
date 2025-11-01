@@ -86,6 +86,24 @@ Notes:
 - Base contains `deployment-web.yaml`, `deployment-api.yaml`, and `deployment-worker.yaml`.
 - Overlay `local` can remove `worker` via a `kustomization.yaml` that excludes or patches it out.
 
+### 3.3 Admin Portal (Webapp)
+
+- Deploy the Admin Portal as a separate web application with its own Deployment/Service and Ingress.
+- Recommended routing:
+	- Separate host: `admin.yourdomain.com` → isolates cookies, CSP, and security headers.
+	- Or reserved path: `/admin` on the primary host with stricter cache and header policies.
+- Chart toggles (example):
+
+	```yaml
+	admin:
+		enabled: true
+		host: admin.yourdomain.com
+		path: /
+	```
+
+- Restrict access server-side via authentication and RBAC; optionally add ingress-level protections (IP allowlists, identity-aware proxy) per environment.
+- Admin-only API endpoints should live under a distinct URL namespace (e.g., `/admin/...`) to simplify routing and firewall rules.
+
 ## 4. Developer Workflows
 
 - **Local dev (fast iteration):** run backend locally (node/python) against local Postgres, start the web app with dev tooling (e.g., Vite), and rely on kind or minikube plus skaffold/tilt for Kubernetes parity.
@@ -141,6 +159,7 @@ Notes:
 Ingress controllers manage external traffic for the cluster. Key considerations:
 
 - **Multi-domain routing:** map distinct hosts such as `app.yourdomain.com` (web) and `api.yourdomain.com` (backend API).
+- Add an admin host such as `admin.yourdomain.com` (Admin Portal webapp) or a reserved path `/admin` on the primary host.
 - **Controller choice:** NGINX remains a robust default; alternatives like Traefik or Istio ingress gateways fit particular needs.
 - **TLS termination:** terminate TLS at the ingress via cert-manager issued certificates.
 

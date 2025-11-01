@@ -125,3 +125,27 @@ Use CI matrix builds to parallelize platform builds. Gate releases on automated 
 ---
 
 This document should evolve alongside the client applications. When adding significant features or new platform targets (e.g., desktop), extend this guide and reference it from `Docs/main.md`.
+
+## 9. Admin Portal (Webapp)
+
+A dedicated web application must be included for administrators. Its scope is intentionally narrow and security-focused:
+
+- Display operational and/or business statistics relevant to admins (e.g., health, usage metrics, job statuses).
+- Trigger privileged actions that are allowed only for administrators (e.g., toggling features, kicking off jobs, running maintenance tasks).
+
+Key guidelines:
+
+- Access control: require authentication and an admin role/claim; hide routes and UI for non-admin users and block API calls server-side.
+- Implementation: build as a web-only target; reuse the shared design system (`packages/ui/`) for consistency.
+- Routing: deploy on a separate host (e.g., `admin.example.com`) or under a reserved path (e.g., `/admin`) with stricter caching and security headers.
+- API surface: call admin-only backend endpoints that enforce RBAC and are audited; see `Docs/backend-api.md`.
+- Observability: optionally embed or deep-link to dashboards (e.g., Grafana) using secure, least-privilege access patterns.
+
+Suggested environment variables:
+
+| Variable                | Description                                              |
+| :---------------------- | :------------------------------------------------------- |
+| `ADMIN_PORTAL_ENABLED`  | Feature gate for showing the admin portal entry points.  |
+| `ADMIN_PORTAL_BASE_URL` | External URL of the deployed admin portal (if separate). |
+
+Build & deploy follow the same web pipeline as other Flutter web targets; see `Docs/k8s.md` for routing and ingress setup.

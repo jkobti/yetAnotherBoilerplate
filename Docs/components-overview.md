@@ -55,3 +55,16 @@ This sheet summarizes the major components included in the boiler project and hi
 - ⚙️ Optional: available patterns that can be toggled on via Helm values, environment variables, or feature flags.
 
 Keep this sheet in sync when new components are introduced or when defaults change. Update the linked documents with deeper guidance as part of the same change.
+
+## Admin Portal (Webapp)
+
+| Area     | Component             | Default | Notes                                                                                   | Reference                                 |
+| :------- | :-------------------- | :------ | :-------------------------------------------------------------------------------------- | :---------------------------------------- |
+| Frontend | Admin Portal (webapp) | ✅       | Web-only admin UI to display statistics and trigger admin-only actions (RBAC enforced). | `Docs/frontend.md`, `Docs/backend-api.md` |
+
+Purpose and scope:
+
+- Present operational/business statistics to administrators.
+- Allow triggering privileged actions (e.g., feature toggles, job triggers, maintenance tasks) that are forbidden to non-admins.
+- Backend endpoints must require admin authorization and should be audited; see `Docs/backend-api.md`.
+- Deployment, routing, and access controls are covered in `Docs/k8s.md`.

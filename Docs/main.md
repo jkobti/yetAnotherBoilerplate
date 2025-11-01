@@ -49,6 +49,20 @@ The server-side stack centers on Django + DRF backed by PostgreSQL. Treat migrat
 
 Cross-platform clients share a Flutter codebase that targets web, iOS, and Android while leaning on shared design systems and API contracts. Keep the overview here high level; implementation details, optional integrations (Sentry, feature flags, push notifications, realtime clients, direct storage access), and platform-specific notes now live in `Docs/frontend.md`.
 
+#### Admin Portal (Webapp)
+
+In addition to end-user clients, the boilerplate includes a dedicated Admin Portal web application. Its purposes are:
+
+- Display operational and business statistics/dashboards relevant to administrators.
+- Trigger administrative actions that are explicitly restricted to admin users (e.g., feature toggles, job triggers, maintenance tasks).
+
+Key notes:
+
+- Access is strictly gated by authentication and role-based authorization; only users with the admin role can access the portal and invoke privileged endpoints.
+- This portal is implemented as a webapp and deployed separately (distinct host or path), while reusing the shared design system where possible.
+- Backend support includes admin-only API endpoints with auditing and rate limits; see `Docs/backend-api.md`.
+- Deployment and routing guidance are covered in `Docs/k8s.md`.
+
 ## Kubernetes Operations Snapshot
 
 Kubernetes remains the default runtime for every component. Use Helm value toggles, Kustomize overlays, environment-driven flags, and feature-flag services to enable or disable workloads per environment. Day-two operations—repository layout, deployment workflows, CI/CD expectations, observability stack, ingress patterns, and validation guardrails—are documented in `Docs/k8s.md`. Treat that guide as the source of truth when evolving platform automation or onboarding new components.

@@ -164,7 +164,27 @@ These features can be enabled based on project requirements:
 
 ---
 
-## 5. References
+## 5. Admin Endpoints & RBAC
+
+Admin functionality must be exposed via dedicated, restricted API endpoints consumed by the Admin Portal webapp.
+
+Requirements:
+
+- Authorization: enforce admin-only access via RBAC (e.g., Django groups/permissions or role claims in JWT/OIDC tokens). Deny by default.
+- Auditing: record who invoked an admin action, when, and with what parameters and outcome. Store audit logs in an append-only fashion where feasible.
+- Rate limiting: apply conservative throttles distinct from public endpoints to prevent abuse.
+- Idempotency and safety: design write endpoints to be idempotent where possible; prefer explicit, narrowly scoped operations over generic commands.
+- CSRF and headers: for browser-based flows, ensure CSRF protection and strict security headers when accessed via the admin host/path.
+
+Example endpoint categories (illustrative):
+
+- Metrics & summaries: `/admin/metrics/...` for high-level stats surfaced in the portal.
+- Job control: `/admin/jobs/...` to enqueue maintenance tasks or retries subject to permission checks.
+- Feature management: `/admin/features/...` to toggle or configure feature flags in a controlled way.
+
+Document and version admin endpoints alongside the public API, but host them under a separate URL namespace to simplify firewalling and routing.
+
+## 6. References
 
 - [Django Documentation](https://docs.djangoproject.com/)
 - [Django REST Framework](https://www.django-rest-framework.org/)
