@@ -1,6 +1,6 @@
 # Frontend Application Stack
 
-This document captures the detailed guidance for building and operating the client applications that ship with the boiler project. A single Flutter codebase targets web, iOS, and Android; this doc expands on the core stack, optional integrations, and platform-specific release processes.
+This document captures the detailed guidance for building and operating the client applications that ship with the yetanotherboilerplate project. A single Flutter codebase targets web, iOS, and Android; this doc expands on the core stack, optional integrations, and platform-specific release processes.
 
 ## 1. Core Stack
 

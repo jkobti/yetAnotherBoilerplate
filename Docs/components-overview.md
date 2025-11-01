@@ -1,6 +1,6 @@
 # Component Coverage Overview
 
-This sheet summarizes the major components included in the boiler project and highlights the features that are enabled by default versus those that are optional. Consult the linked documents for implementation details and configuration steps.
+This sheet summarizes the major components included in the yetanotherboilerplate project and highlights the features that are enabled by default versus those that are optional. Consult the linked documents for implementation details and configuration steps.
 
 ## Platform & Cluster Services
 

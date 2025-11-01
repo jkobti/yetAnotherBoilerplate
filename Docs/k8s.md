@@ -1,6 +1,6 @@
 # Kubernetes Platform Guide
 
-This companion to `Docs/main.md` captures the Kubernetes-first operational model for the boiler project. Use it when evolving infrastructure automation, onboarding new services, or adjusting cluster-level workflows.
+This companion to `Docs/main.md` captures the Kubernetes-first operational model for the yetanotherboilerplate project. Use it when evolving infrastructure automation, onboarding new services, or adjusting cluster-level workflows.
 
 ## 1. Activation & Deactivation Strategy
 
@@ -43,7 +43,7 @@ Provide consistent, low-effort ways to enable or disable components across envir
 This is the opinionated monorepo layout used throughout the docs. Adapt to multi-repo if preferred.
 
 ```
-boiler/
+yetanotherboilerplate/
 ├── README.md
 ├── charts/                  # Helm charts for each deployable component
 ├── k8s/                     # kustomize base + overlays

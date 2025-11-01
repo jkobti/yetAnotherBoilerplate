@@ -1,6 +1,6 @@
-## Boiler
+## yetanotherboilerplate
 
-This document is the starting point for the `boiler` project — a reusable, production-ready boilerplate that you can use as the foundation for future projects.
+This document is the starting point for the `yetanotherboilerplate` project — a reusable, production-ready boilerplate that you can use as the foundation for future projects.
 
 The goal: define a flexible, modular starter that supports frontend and backend apps (web, iOS, Android, APIs, workers), is deployable to Kubernetes, and allows components to be easily activated or deactivated.
 
