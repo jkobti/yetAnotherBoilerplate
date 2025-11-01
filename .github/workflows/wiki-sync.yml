@@ -6,6 +6,7 @@ on:
     paths:
       - 'Docs/**'
       - '.github/workflows/wiki-sync.yml'
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -40,6 +41,17 @@ jobs:
                   echo "- [${title}](${f})"
                 done
           } > wiki-stage/_Sidebar.md
+
+          echo "---- Staged files (wiki-stage) ----"
+          ls -la wiki-stage || true
+          echo
+          echo "Markdown files detected:"
+          find wiki-stage -maxdepth 2 -type f -name '*.md' -print | sed 's/^/  - /'
+          echo
+          if ! find wiki-stage -maxdepth 1 -type f -name '*.md' | grep -q .; then
+            echo "No markdown files found in Docs/. Ensure Docs/ contains .md files on the main branch."
+            exit 1
+          fi
 
       - name: Push to Wiki
         env:
@@ -76,6 +88,8 @@ jobs:
           rsync -av --delete wiki-stage/ wiki/
 
           cd wiki
+          echo "---- Wiki repo status before commit ----"
+          git status --porcelain=v1
           if [ -z "$(git status --porcelain)" ]; then
             echo "No changes to commit."
             exit 0
@@ -83,3 +97,4 @@ jobs:
           git add -A
           git commit -m "Sync Docs/ to Wiki [CI]"
           git push
+          echo "Last wiki commit:" && git --no-pager log -1 --oneline
