@@ -26,7 +26,108 @@ These features are essential for a production-ready application and should be co
 
 ---
 
-## 3. API Documentation Strategy: `drf-spectacular` + ReDoc
+## 3. Identity, Tenancy, and Supporting Models
+
+Establish these base models early. They unlock flexibility (custom fields), secure multi-tenancy, and production-grade integrations (API access, notifications). Names and apps are suggestions; align with your repo layout.
+
+### 3.1 The Core Identity: User
+
+- Do not use Django's built-in `User` model directly. Start with a CustomUser that inherits from `AbstractUser`.
+- App: `users`
+- Model: `User` (extends `AbstractUser`)
+
+Key fields and choices:
+
+- `id`: UUID primary key (recommended for security and scalability)
+- `email`: make this the primary username field (`USERNAME_FIELD = "email"`), unique and indexed
+- `first_name`, `last_name`
+- `is_staff`: admin-access flag for the Admin Portal
+- `date_joined`, `last_login` (from `AbstractUser`)
+- Room for future fields without painful migrations: `avatar_url`, `phone_number`, etc.
+
+Why: Choosing CustomUser up front avoids brittle migrations later and gives you control over auth shape and identifiers.
+
+### 3.2 The Core Tenancy: Organization & Membership
+
+Assume multi-tenancy from day one. Users belong to one or more organizations (aka teams/workspaces). This pattern scales from B2B (companies) to consumer (family plan / project workspace).
+
+A) Organization
+
+- App: `organizations`
+- Model: `Organization`
+
+Key fields:
+
+- `id`: UUID
+- `name`: e.g., "Acme Inc."
+- `owner`: FK → `users.User` (the creator/primary admin)
+- `members`: ManyToMany → `users.User` via `Membership` (through model)
+
+B) Membership (through model)
+
+- App: `organizations`
+- Model: `Membership`
+
+Key fields:
+
+- `id`
+- `user`: FK → `users.User`
+- `organization`: FK → `organizations.Organization`
+- `role`: CharField with choices (e.g., `admin`, `member`, `billing`)
+
+Critical rule: Domain data (projects, documents, subscriptions, etc.) should belong to an `Organization`, not a `User`. Query and permission checks must always scope by tenant.
+
+### 3.3 Core Supporting Models (API access and notifications)
+
+A) APIKey
+
+- App: `api` (or `public_api`)
+- Model: `APIKey`
+
+Key fields:
+
+- `id`
+- `key_prefix`: short display-safe prefix (e.g., `sk_live_...`)
+- `hashed_key`: store a hash only; never the raw key
+- `organization`: FK → `organizations.Organization` (keys belong to the team)
+- `last_used`
+- `expires_at`
+
+Notes:
+
+- Rotate keys, capture minimal audit (who created, when, last_used IP if applicable), and consider scopes if you expose granular permissions.
+
+B) Notification
+
+- App: `notifications`
+- Model: `Notification`
+
+Key fields:
+
+- `id`
+- `recipient`: FK → `users.User`
+- `message`: human-readable text (e.g., "Jane commented on your post.")
+- `type`: enumerated type (e.g., `new_comment`, `billing_alert`)
+- `read_at`: timestamp (null if unread)
+- `target_url`: deep-link to view in app
+
+Notes:
+
+- Backends can fan out realtime via Channels/WebSockets, queue push notifications (FCM/APNs), and expose REST for notification lists and read-state toggles.
+
+### Summary: Base Data Model
+
+Adopt these models for a batteries-included foundation:
+
+- `User` (Custom, UUID PK, email as username)
+- `Organization` (tenant)
+- `Membership` (through model with role)
+- `APIKey` (tenant-scoped customer API access)
+- `Notification` (user communications, realtime-friendly)
+
+These provide identity, multi-tenancy, API access, and user communication with minimal friction and align with customer-facing API and frontend notification patterns described elsewhere in this boilerplate.
+
+## 4. API Documentation Strategy: `drf-spectacular` + ReDoc
 
 To deliver high-quality, auto-generated, and visually impressive documentation, the following strategy will be used:
 
@@ -92,11 +193,11 @@ Following the project's modularity principle, documentation endpoints should be 
 
 ---
 
-## 4. Optional Backend Features
+## 5. Optional Backend Features
 
 These features can be enabled based on project requirements:
 
-### 4.1 Worker Processes (Celery)
+### 5.1 Worker Processes (Celery)
 
 **Purpose:** Running background jobs asynchronously (e.g., sending emails, processing uploads, generating reports).
 
@@ -111,7 +212,7 @@ These features can be enabled based on project requirements:
 - Enable via Helm values: `worker.enabled: true`
 - Deploy as a separate Kubernetes Deployment.
 
-### 4.2 Real-time Communication (WebSockets)
+### 5.2 Real-time Communication (WebSockets)
 
 **Purpose:** Persistent, bidirectional connections for live updates.
 
@@ -127,7 +228,7 @@ These features can be enabled based on project requirements:
 - Enable via feature flag: `WEBSOCKETS_ENABLED=true`
 - Deploy WebSocket server as separate service (can share codebase with API).
 
-### 4.3 Object Storage Integration
+### 5.3 Object Storage Integration
 
 **Purpose:** Storing and serving user-uploaded files (images, documents, videos).
 
@@ -139,7 +240,7 @@ These features can be enabled based on project requirements:
 
 **Service Authentication:** Require TLS everywhere. Issue service certificates via cluster cert-manager so frontend-to-backend traffic (including WebSockets) uses mTLS when deployed inside the cluster or through the ingress.
 
-### 4.4 Authentication & Authorization
+### 5.4 Authentication & Authorization
 
 **Options:**
 1. **Django's built-in auth** + JWT tokens (via `djangorestframework-simplejwt`)
@@ -148,7 +249,7 @@ These features can be enabled based on project requirements:
 
 **Recommendation:** Start with JWT tokens for API authentication, add OAuth2 integration as needed.
 
-### 4.5 Feature Flag Integration
+### 5.5 Feature Flag Integration
 
 **Purpose:** Toggle features at runtime without code deployments.
 
@@ -164,7 +265,7 @@ These features can be enabled based on project requirements:
 
 ---
 
-## 5. Customer-Facing API Template
+## 6. Customer-Facing API Template
 
 Provide a built-in, opinionated template for customer-facing API endpoints to ensure consistency, stability, and excellent developer experience.
 
@@ -220,7 +321,7 @@ Security & multi-tenancy:
 
 Refer to this template when adding new public/customer endpoints to keep APIs consistent and easy to integrate.
 
-## 6. Admin Endpoints & RBAC
+## 7. Admin Endpoints & RBAC
 
 Admin functionality must be exposed via dedicated, restricted API endpoints consumed by the Admin Portal webapp.
 
@@ -240,7 +341,7 @@ Example endpoint categories (illustrative):
 
 Document and version admin endpoints alongside the public API, but host them under a separate URL namespace to simplify firewalling and routing.
 
-## 7. References
+## 8. References
 
 - [Django Documentation](https://docs.djangoproject.com/)
 - [Django REST Framework](https://www.django-rest-framework.org/)
