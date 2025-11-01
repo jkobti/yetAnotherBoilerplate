@@ -1,0 +1,75 @@
+name: Sync Docs to Wiki
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Docs/**'
+      - '.github/workflows/wiki-sync.yml'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # needed for pushing to the wiki repo
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare staging area
+        run: |
+          set -euo pipefail
+          rm -rf wiki-stage
+          mkdir -p wiki-stage
+
+          # Copy Docs/ into staging and normalize
+          rsync -av --delete Docs/ wiki-stage/
+
+          # Map repo Docs/main.md to wiki Home.md if present
+          if [ -f wiki-stage/main.md ]; then mv -f wiki-stage/main.md "wiki-stage/Home.md"; fi
+
+          # Generate a Sidebar: Home at the top, then all other pages sorted
+          # Use Markdown links to match exact filenames, avoiding WikiLink title mismatches
+          {
+            echo "- [[Home]]"
+            ls -1 wiki-stage/*.md 2>/dev/null | xargs -n1 basename \
+              | grep -v -E '^Home\.md$|^_' \
+              | sort \
+              | while read -r f; do
+                  title=$(echo "$f" | sed -E 's/\.md$//' | sed -E 's/[-_]+/ /g' | awk '{for(i=1;i<=NF;i++){ $i=toupper(substr($i,1,1)) substr($i,2) }}1')
+                  echo "- [${title}](${f})"
+                done
+          } > wiki-stage/_Sidebar.md
+
+      - name: Push to Wiki
+        env:
+          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # If GITHUB_TOKEN is restricted for the Wiki in your org, create a PAT and add as WIKI_PUSH_TOKEN secret,
+          # then swap the clone URL below to use it instead of GITHUB_TOKEN.
+          # WIKI_PUSH_TOKEN: ${{ secrets.WIKI_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config --global init.defaultBranch main
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Clone the wiki repository (separate .wiki repo)
+          git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.wiki.git" wiki || {
+            echo "Failed to clone wiki. Ensure the Wiki feature is enabled in the repository settings." >&2
+            exit 1
+          }
+          # If using PAT instead, use the following line and comment out the one above:
+          # git clone "https://${WIKI_PUSH_TOKEN}@github.com/${REPO}.wiki.git" wiki
+
+          # Sync staged content into wiki repo (delete removed files)
+          rsync -av --delete wiki-stage/ wiki/
+
+          cd wiki
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git add -A
+          git commit -m "Sync Docs/ to Wiki [CI]"
+          git push
