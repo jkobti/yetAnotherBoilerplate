@@ -11,6 +11,8 @@ def health_view(_request):
 
 
 urlpatterns = [
+    # More specific admin API must come before the general Django admin route
+    path("admin/api/", include("apps.admin_api.urls")),
     path("admin/", admin.site.urls),
     path("health/", health_view, name="health"),
 ]
@@ -34,7 +36,4 @@ else:
         path("api/", include("apps.public_api.urls")),
     ]
 
-# Admin API (separate namespace)
-urlpatterns += [
-    path("admin/api/", include("apps.admin_api.urls")),
-]
+# (admin/api/ included above to ensure correct precedence)

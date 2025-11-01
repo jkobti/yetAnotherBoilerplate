@@ -65,6 +65,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Ensure idempotency runs after auth so request.user is available
+    "boilerplate.middleware.IdempotencyMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -202,8 +204,7 @@ elif EMAIL_PROVIDER == "resend":
     EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
     EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True)
 
-# Idempotency middleware
-MIDDLEWARE.insert(0, "boilerplate.middleware.IdempotencyMiddleware")
+# (Idempotency middleware already included above in correct order)
 
 # SimpleJWT settings
 from datetime import timedelta  # noqa: E402

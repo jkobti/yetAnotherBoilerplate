@@ -87,6 +87,13 @@ poetry run isort .
 poetry run isort . --check --diff
 ```
 
+## Running tests
+
+```zsh
+cd packages/backend
+poetry run pytest -q
+```
+
 ## Troubleshooting
 
 - DisallowedHost with 0.0.0.0: Set `ALLOWED_HOSTS=127.0.0.1,localhost,0.0.0.0` in `.env` (no brackets) and restart the server.

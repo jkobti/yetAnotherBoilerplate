@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .models import AdminAudit
@@ -10,8 +9,6 @@ from .models import AdminAudit
 
 class PingView(APIView):
     permission_classes = [IsAdminUser]
-    throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "admin"
 
     def get(self, request):
         AdminAudit.objects.create(

@@ -4,7 +4,6 @@ from typing import Callable
 
 from django.http import JsonResponse, HttpRequest, HttpResponse
 from django.utils.deprecation import MiddlewareMixin
-from django.utils import timezone
 
 from apps.public_api.models import IdempotencyKey
 
@@ -37,10 +36,14 @@ class IdempotencyMiddleware(MiddlewareMixin):
                 },
                 status=409,
             )
+        # request.user may not be set if AuthenticationMiddleware hasn't run yet
+        django_user = getattr(request, "user", None)
+        user_value = django_user if getattr(django_user, "is_authenticated", False) else None
+
         IdempotencyKey.objects.create(
             key=key,
             path=request.path,
             method=request.method,
-            user=request.user if request.user.is_authenticated else None,
+            user=user_value,
         )
         return None
