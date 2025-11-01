@@ -48,6 +48,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "anymail",
+    "rest_framework_simplejwt",
+    # Optional: enable refresh token blacklist/rotation
+    "rest_framework_simplejwt.token_blacklist",
     # Local apps
     "apps.users",
     "apps.organizations",
@@ -142,6 +145,11 @@ REST_FRAMEWORK = {
         # Used by admin endpoints via throttle_scope = 'admin'
         "admin": "100/day",
     },
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # Keep session auth for admin site/dev browsable API
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "EXCEPTION_HANDLER": "boilerplate.exceptions.problem_details_handler",
 }
 
@@ -196,3 +204,19 @@ elif EMAIL_PROVIDER == "resend":
 
 # Idempotency middleware
 MIDDLEWARE.insert(0, "boilerplate.middleware.IdempotencyMiddleware")
+
+# SimpleJWT settings
+from datetime import timedelta  # noqa: E402
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    # Use the custom user's primary key field
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "sub",
+}

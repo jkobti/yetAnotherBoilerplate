@@ -67,6 +67,33 @@ poetry run isort .
 poetry run isort . --check --diff
 ```
 
+### JWT authentication (for frontend apps)
+
+Endpoints (JSON):
+
+- Obtain tokens: `POST /api/auth/jwt/token/` → `{ "access": "...", "refresh": "..." }`
+- Refresh access: `POST /api/auth/jwt/refresh/` → `{ "access": "..." }`
+- Verify token: `POST /api/auth/jwt/verify/`
+
+Notes:
+- Send `Authorization: Bearer <access>` to call protected endpoints like `/api/v1/me`.
+- Credentials fields match the user model: `{ "email": "user@example.com", "password": "..." }`.
+- Token lifetimes (defaults): access 15 minutes, refresh 30 days.
+
+Examples:
+
+```http
+POST /api/auth/jwt/token/
+Content-Type: application/json
+
+{"email":"admin@example.com","password":"<your password>"}
+```
+
+```http
+GET /api/v1/me
+Authorization: Bearer <access>
+```
+
 Troubleshooting:
 
 - DisallowedHost with 0.0.0.0: Set `ALLOWED_HOSTS=127.0.0.1,localhost,0.0.0.0` in `.env` (no brackets). Restart the dev server.
