@@ -26,8 +26,11 @@ jobs:
           # Copy Docs/ into staging and normalize
           rsync -av --delete Docs/ wiki-stage/
 
-          # Map repo Docs/main.md to wiki Home.md if present
-          if [ -f wiki-stage/main.md ]; then mv -f wiki-stage/main.md "wiki-stage/Home.md"; fi
+          # Map repo Docs/*main.md (with or without numeric prefix) to wiki Home.md if present (top-level only)
+          MAIN_CANDIDATE=$(find wiki-stage -maxdepth 1 -type f -regextype posix-extended -regex '.*/([0-9]+[._-]+)?main\.md' | head -n1 || true)
+          if [ -n "${MAIN_CANDIDATE:-}" ]; then
+            mv -f "$MAIN_CANDIDATE" "wiki-stage/Home.md"
+          fi
           # Generate _Sidebar.md with:
           #  - Custom ordering via numeric prefixes (e.g., 01-intro.md)
           #  - Nested folders with indentation

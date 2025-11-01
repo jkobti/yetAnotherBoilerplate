@@ -1,7 +1,7 @@
 
 Root Project Structure
 This top-level organizes the project by function: platform (charts, k8s), application code (packages), and project support (docs, .github).
-
+```
 /yetAnotherBoilerplate/
 ├── .github/              # CI/CD workflows (GitHub Actions)
 │   └── workflows/
@@ -31,9 +31,10 @@ This top-level organizes the project by function: platform (charts, k8s), applic
     ├── backend/          # (See Backend Structure)
     ├── flutter_app/      # (See Frontend Structure)
     └── ui_kit/           # (See Shared UI Kit Structure)
+```
 1. Backend Package (packages/backend/)
 This package now contains everything for your Django backend, including the build files for both the API server and the Celery worker.
-
+```
 /packages/backend/
 ├── .dockerignore
 ├── Dockerfile            <-- Builds the API server (runs Gunicorn)
@@ -71,10 +72,11 @@ This package now contains everything for your Django backend, including the buil
     │
     └── admin_api/          # Endpoints for your Admin Portal
         ├── views.py
-        └── ...
+    └── ...
+```
 2. Frontend Package (packages/flutter_app/)
 This single Flutter project builds both your Customer and Admin apps by using two different entry points (main.dart and main_admin.dart).
-
+```
 /packages/flutter_app/
 ├── .dockerignore
 ├── Dockerfile.web          # Builds NGINX container for Customer App
@@ -105,9 +107,10 @@ This single Flutter project builds both your Customer and Admin apps by using tw
     # dependencies:
     #   ui_kit:
     #     path: ../ui_kit    <-- Imports the shared UI Kit
+```
 3. Shared UI Kit (packages/ui_kit/)
 This is a local Flutter library that packages/flutter_app depends on. It fulfills your requirement to have a shared design system.
-
+```
 /packages/ui_kit/
 ├── lib/
 │   ├── src/
@@ -117,3 +120,4 @@ This is a local Flutter library that packages/flutter_app depends on. It fulfill
 │   └── ui_kit.dart       # Exports all public components/themes
 │
 └── pubspec.yaml            # This file makes it a "package"
+```
