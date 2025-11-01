@@ -30,7 +30,7 @@ jobs:
           if [ -f wiki-stage/main.md ]; then mv -f wiki-stage/main.md "wiki-stage/Home.md"; fi
 
           # Generate a Sidebar: Home at the top, then all other pages sorted
-          # Use Markdown links to match exact filenames, avoiding WikiLink title mismatches
+          # Use WikiLinks ([[Page Title]]) so clicks open the wiki page view, not raw .md files
           {
             echo "- [[Home]]"
             ls -1 wiki-stage/*.md 2>/dev/null | xargs -n1 basename \
@@ -38,7 +38,7 @@ jobs:
               | sort \
               | while read -r f; do
                   title=$(echo "$f" | sed -E 's/\.md$//' | sed -E 's/[-_]+/ /g' | awk '{for(i=1;i<=NF;i++){ $i=toupper(substr($i,1,1)) substr($i,2) }}1')
-                  echo "- [${title}](${f})"
+                  echo "- [[${title}]]"
                 done
           } > wiki-stage/_Sidebar.md
 
