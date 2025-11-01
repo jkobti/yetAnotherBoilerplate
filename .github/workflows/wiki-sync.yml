@@ -54,10 +54,18 @@ jobs:
           git config --global user.name  "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Check if the Wiki feature is enabled on this repository; if not, skip gracefully
+          API_URL="${GITHUB_API_URL:-https://api.github.com}"
+          if ! curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
+               "${API_URL}/repos/${REPO}" | grep -q '"has_wiki": *true'; then
+            echo "Wiki feature is disabled for ${REPO}. Skipping wiki sync (no failure)."
+            exit 0
+          fi
+
           # Clone the wiki repository (separate .wiki repo)
           git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.wiki.git" wiki || {
-            echo "Failed to clone wiki. Ensure the Wiki feature is enabled in the repository settings." >&2
-            exit 1
+            echo "Failed to clone wiki repository. Verify wiki is enabled and token has access. Skipping without failure." >&2
+            exit 0
           }
           # If using PAT instead, use the following line and comment out the one above:
           # git clone "https://${WIKI_PUSH_TOKEN}@github.com/${REPO}.wiki.git" wiki
