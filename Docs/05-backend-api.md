@@ -13,59 +13,13 @@ This document defines the core requirements, features, and architectural decisio
 | **Database**          | PostgreSQL                        | Primary persistence layer, managed via Django ORM.                                             |
 | **Documentation**     | **`drf-spectacular`** + **ReDoc** | Automatic OpenAPI 3.0 generation paired with a modern rendering UI.                            |
 | **Dependencies**      | Poetry                            | Manage deps in `pyproject.toml`; lock with `poetry.lock`. Use `poetry add` / `poetry install`. |
-| **Local Development** | Poetry                            | Follow the steps below to run the backend locally.                                             |
+| **Local Development** | Poetry                            | See `packages/backend/README.md` for setup and run instructions.                               |
 
 ---
 
-## 1.1 Local development (no Kubernetes)
+## 1.1 Local development
 
-Follow these steps to run the backend locally using Poetry and SQLite (default). macOS/zsh examples shown.
-
-Prereqs:
-
-- Python 3.11 installed
-- Poetry installed (`pipx install poetry` or via Homebrew)
-
-Setup and run:
-
-```zsh
-cd packages/backend
-
-# Create and use a virtualenv managed by Poetry
-poetry env use 3.11
-poetry install
-
-# Create a local .env from the example (optional)
-cp -n .env.example .env || true
-
-# Create migrations and apply them
-poetry run python manage.py makemigrations
-poetry run python manage.py migrate
-
-# Create a superuser (use your email as username)
-poetry run python manage.py createsuperuser --email admin@example.com
-
-# Start the dev server
-poetry run python manage.py runserver 0.0.0.0:8000
-```
-
-Quick checks:
-
-- Health: http://localhost:8000/health/
-- Admin: http://localhost:8000/admin/
-- API docs (if `API_DOCS_ENABLED=true`): http://localhost:8000/api/docs/
- - Root path `/` redirects to `/api/docs/` when docs are enabled; otherwise it serves the health endpoint.
-
-Formatting imports (backend only):
-
-```zsh
-cd packages/backend
-# Sort imports in-place per isort config in this package
-poetry run isort .
-
-# Check mode (CI-friendly)
-poetry run isort . --check --diff
-```
+See `packages/backend/README.md` for local setup, environment variables, and run commands.
 
 ### JWT authentication (for frontend apps)
 
@@ -94,9 +48,7 @@ GET /api/v1/me
 Authorization: Bearer <access>
 ```
 
-Troubleshooting:
-
-- DisallowedHost with 0.0.0.0: Set `ALLOWED_HOSTS=127.0.0.1,localhost,0.0.0.0` in `.env` (no brackets). Restart the dev server.
+For operational notes (troubleshooting, formatting, etc.), refer to `packages/backend/README.md`.
 ---
 
 ## 2. Core Backend Feature Requirements
