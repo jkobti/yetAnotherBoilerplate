@@ -1,0 +1,33 @@
+from django.contrib import admin
+from django.http import JsonResponse
+from django.urls import path
+from django.conf import settings
+from django.views.generic import RedirectView
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
+
+
+def health_view(_request):
+    return JsonResponse({"status": "ok"})
+
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("health/", health_view, name="health"),
+]
+
+if getattr(settings, "API_DOCS_ENABLED", False):
+    urlpatterns += [
+        # Default root redirects to API Docs when enabled
+        path("", RedirectView.as_view(pattern_name="redoc", permanent=False), name="root"),
+        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+        path(
+            "api/docs/",
+            SpectacularRedocView.as_view(url_name="schema"),
+            name="redoc",
+        ),
+    ]
+else:
+    # Without docs, land the root on a simple health/status endpoint
+    urlpatterns += [
+        path("", health_view, name="root"),
+    ]

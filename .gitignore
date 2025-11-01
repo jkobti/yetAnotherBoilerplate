@@ -4,3 +4,5 @@
 wiki/
 wiki-stage/
 .DS_Store
+packages/backend/.env
+packages/backend/db.sqlite3
