@@ -43,7 +43,7 @@ These are the infrastructure-level components deployed into the Kubernetes clust
 
 ### 2. Backend Application Components
 
-The server-side stack centers on Django + DRF backed by PostgreSQL. Treat migrations, rate limiting, and email integrations as baseline capabilities, and layer in workers, realtime transport, and storage adapters as needed. Refer to `Docs/backend-api.md` for the authoritative breakdown of required features, optional add-ons, and configuration guidance.
+The server-side stack centers on Django + DRF backed by PostgreSQL. Treat migrations, rate limiting, and email integrations as baseline capabilities, and layer in workers, realtime transport, and storage adapters as needed. A built-in template for customer-facing API endpoints standardizes versioning, pagination, error shapes, and idempotency for external integrations. Refer to `Docs/backend-api.md` for the authoritative breakdown of required features, the customer-facing API template, optional add-ons, and configuration guidance.
 
 ### 3. Frontend Application Components
 

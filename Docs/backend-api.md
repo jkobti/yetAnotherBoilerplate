@@ -164,7 +164,63 @@ These features can be enabled based on project requirements:
 
 ---
 
-## 5. Admin Endpoints & RBAC
+## 5. Customer-Facing API Template
+
+Provide a built-in, opinionated template for customer-facing API endpoints to ensure consistency, stability, and excellent developer experience.
+
+Contract guidelines:
+
+- Versioning: prefix routes with a version (e.g., `/api/v1/...`) and avoid breaking changes within a major version.
+- Authentication: support API keys and/or OAuth2 (client credentials) for service integrations; JWT for first-party apps.
+- Pagination: cursor- or page-based pagination with standard query params and response metadata (`next`, `prev`, `total` when applicable).
+- Filtering & sorting: predictable query parameters (`filter[field]=`, `sort=field,-other`) with documented allowlists.
+- Errors: structured errors using RFC 7807 Problem Details or a consistent envelope with machine-readable codes.
+- Idempotency: support an `Idempotency-Key` header for safe retries on POST/PUT operations.
+- Rate limiting: include standard headers (e.g., `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `Retry-After`).
+
+Example shapes (illustrative):
+
+```http
+GET /api/v1/customers?cursor=eyJvZmZzZXQiOjEwMH0=&filter[status]=active&sort=-created_at
+Authorization: Bearer <token>
+```
+
+```json
+{
+    "data": [ { "id": "cust_123", "email": "a@example.com", "status": "active" } ],
+    "meta": { "next": "eyJvZmZzZXQiOjIwMH0=", "prev": null, "total": 1024 }
+}
+```
+
+```http
+POST /api/v1/invoices
+Idempotency-Key: 7ad2b6c1-0e6f-4ac3-9c0a-1a2b3c4d5e6f
+Content-Type: application/json
+
+{"customer_id":"cust_123","items":[{"sku":"sku_1","qty":2}]}
+```
+
+```json
+{
+    "id": "inv_789",
+    "status": "pending",
+    "created_at": "2025-11-01T10:00:00Z"
+}
+```
+
+OpenAPI documentation:
+
+- Provide reusable components (schemas, parameters, responses) for pagination, errors, and common headers.
+- Tag endpoints by domain (e.g., Customers, Invoices) and include example requests/responses.
+
+Security & multi-tenancy:
+
+- Enforce tenant scoping at the data layer and in queries.
+- Log sensitive operations and surface correlation IDs for support.
+
+Refer to this template when adding new public/customer endpoints to keep APIs consistent and easy to integrate.
+
+## 6. Admin Endpoints & RBAC
 
 Admin functionality must be exposed via dedicated, restricted API endpoints consumed by the Admin Portal webapp.
 
@@ -184,7 +240,7 @@ Example endpoint categories (illustrative):
 
 Document and version admin endpoints alongside the public API, but host them under a separate URL namespace to simplify firewalling and routing.
 
-## 6. References
+## 7. References
 
 - [Django Documentation](https://docs.djangoproject.com/)
 - [Django REST Framework](https://www.django-rest-framework.org/)

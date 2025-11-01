@@ -27,6 +27,7 @@ This sheet summarizes the major components included in the boiler project and hi
 | API protection     | Rate limiting                                               | ✅          | Sensible global throttles; configurable per view.              | `Docs/backend-api.md` |
 | Communication      | Email integration via Django-Anymail                        | ✅          | Provider-agnostic transactional email.                         | `Docs/backend-api.md` |
 | Documentation      | drf-spectacular + ReDoc                                     | ✅          | OpenAPI 3.0 generation and docs UX.                            | `Docs/backend-api.md` |
+| API design         | Customer-facing API template                                | ✅          | Opinionated versioning, pagination, errors, idempotency keys.  | `Docs/backend-api.md` |
 | Background jobs    | Celery workers (Redis/RabbitMQ)                             | ⚙️ Optional | Asynchronous task execution, scheduled jobs.                   | `Docs/backend-api.md` |
 | Realtime           | Django Channels (WebSockets)                                | ⚙️ Optional | Live notifications, chat, collaborative experiences.           | `Docs/backend-api.md` |
 | Storage            | S3-compatible integration via django-storages               | ⚙️ Optional | Presigned uploads/downloads, asset offloading.                 | `Docs/backend-api.md` |
