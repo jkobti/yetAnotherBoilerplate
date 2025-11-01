@@ -50,12 +50,6 @@ This sheet summarizes the major components included in the yetanotherboilerplate
 | Realtime           | WebSocket/STOMP client                       | ⚙️ Optional | Connects to backend Channels endpoints.                 | `Docs/frontend.md` |
 | Storage            | Direct object storage access                 | ⚙️ Optional | Uses pre-signed URLs for uploads/downloads.             | `Docs/frontend.md` |
 
-## Quick Legend
-
-- ✅ Default: included out-of-the-box when the boilerplate is instantiated.
-- ⚙️ Optional: available patterns that can be toggled on via Helm values, environment variables, or feature flags.
-
-Keep this sheet in sync when new components are introduced or when defaults change. Update the linked documents with deeper guidance as part of the same change.
 
 ## Admin Portal (Webapp)
 
@@ -69,3 +63,10 @@ Purpose and scope:
 - Allow triggering privileged actions (e.g., feature toggles, job triggers, maintenance tasks) that are forbidden to non-admins.
 - Backend endpoints must require admin authorization and should be audited; see `Docs/backend-api.md`.
 - Deployment, routing, and access controls are covered in `Docs/k8s.md`.
+
+## Quick Legend
+
+- ✅ Default: included out-of-the-box when the boilerplate is instantiated.
+- ⚙️ Optional: available patterns that can be toggled on via Helm values, environment variables, or feature flags.
+
+Keep this sheet in sync when new components are introduced or when defaults change. Update the linked documents with deeper guidance as part of the same change.
