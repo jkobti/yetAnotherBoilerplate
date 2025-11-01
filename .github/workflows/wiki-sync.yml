@@ -28,27 +28,110 @@ jobs:
 
           # Map repo Docs/main.md to wiki Home.md if present
           if [ -f wiki-stage/main.md ]; then mv -f wiki-stage/main.md "wiki-stage/Home.md"; fi
+          # Generate _Sidebar.md with:
+          #  - Custom ordering via numeric prefixes (e.g., 01-intro.md)
+          #  - Nested folders with indentation
+          #  - Optional manual override: if Docs/_Sidebar.md exists, it will be synced as-is
 
-          # Generate a Sidebar: Home at the top, then all other pages sorted
-          # Use WikiLinks ([[Page Title]]) so clicks open the wiki page view, not raw .md files
-          {
-            echo "- [[Home]]"
-            ls -1 wiki-stage/*.md 2>/dev/null | xargs -n1 basename \
-              | grep -v -E '^Home\.md$|^_' \
-              | sort \
-              | while read -r f; do
-                  title=$(echo "$f" | sed -E 's/\.md$//' | sed -E 's/[-_]+/ /g' | awk '{for(i=1;i<=NF;i++){ $i=toupper(substr($i,1,1)) substr($i,2) }}1')
-                  echo "- [[${title}]]"
-                done
-          } > wiki-stage/_Sidebar.md
+          # If a manual _Sidebar.md exists in Docs/, keep it (copied by rsync). Otherwise, auto-generate.
+          if [ ! -f wiki-stage/_Sidebar.md ]; then
+            sidebar_tmp="wiki-stage/_Sidebar.md"
+
+            strip_prefix() {
+              # prints two fields: number_or_999999 and remainder
+              local name="$1"
+              if echo "$name" | grep -E '^[0-9]+[._-]'; then
+                local num=$(echo "$name" | sed -E 's/^([0-9]+)[._-].*/\1/')
+                local rest=$(echo "$name" | sed -E 's/^[0-9]+[._-]+//')
+                printf '%s\t%s\n' "$num" "$rest"
+              else
+                printf '999999\t%s\n' "$name"
+              fi
+            }
+
+            titleize() {
+              # turn 'folder_structure.md' -> 'Folder Structure'
+              echo "$1" | sed -E 's/\.md$//' | sed -E 's/[-_]+/ /g' | awk '{for(i=1;i<=NF;i++){ $i=toupper(substr($i,1,1)) substr($i,2) }}1'
+            }
+
+            rel_no_ext() {
+              # make path relative to wiki root without .md extension
+              echo "$1" | sed -E 's/^wiki-stage\///' | sed -E 's/\.md$//'
+            }
+
+            emit_dir() {
+              local dir="$1"
+              local indent="$2"
+              # List directories and files, compute sort keys from numeric prefixes
+              # Collect directories
+              mapfile -t DIRS < <(find "$dir" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' 2>/dev/null | while read -r d; do
+                # skip hidden and underscore-prefixed folders
+                [ "${d#_}" != "$d" ] && continue
+                read -r num rest < <(strip_prefix "$d")
+                printf '%s|D|%s|%s\n' "$num" "$rest" "$d"
+              done | sort -t '|' -k1,1n -k3,3f)
+
+              # Collect files and de-duplicate by base name preferring lowest numeric prefix
+              mapfile -t FILES_RAW < <(find "$dir" -maxdepth 1 -mindepth 1 -type f -name '*.md' -printf '%f\n' 2>/dev/null | while read -r f; do
+                # skip special files
+                [ "$f" = "_Sidebar.md" ] && continue
+                [ "$f" = "Home.md" ] && continue
+                [ "${f#_}" != "$f" ] && continue
+                read -r num rest < <(strip_prefix "$f")
+                printf '%s|%s|%s\n' "$num" "$rest" "$f"
+              done)
+              # Build associative array: best[file_base]=num|filename (lowest num wins)
+              declare -A BEST
+              for entry in "${FILES_RAW[@]}"; do
+                IFS='|' read -r num rest name <<< "$entry"
+                key="$rest"
+                if [[ -z "${BEST[$key]}" ]]; then
+                  BEST[$key]="$num|$name"
+                else
+                  IFS='|' read -r best_num best_name <<< "${BEST[$key]}"
+                  if (( 10#$num < 10#$best_num )); then
+                    BEST[$key]="$num|$name"
+                  fi
+                fi
+              done
+              FILES=()
+              for key in "${!BEST[@]}"; do
+                IFS='|' read -r num name <<< "${BEST[$key]}"
+                # Keep original 'rest' for display from key
+                FILES+=("$num|F|$key|$name")
+              done
+              # Sort by numeric then display key
+              IFS=$'\n' FILES=($(printf "%s\n" "${FILES[@]}" | sort -t '|' -k1,1n -k3,3f)); unset IFS
+
+              # Emit directories first
+              for entry in "${DIRS[@]}"; do
+                IFS='|' read -r _ _ rest name <<< "$entry"
+                local display=$(titleize "$rest")
+                echo "${indent}- ${display}" >> "$sidebar_tmp"
+                emit_dir "$dir/$name" "${indent}  "
+              done
+
+              # Then files
+              for entry in "${FILES[@]}"; do
+                IFS='|' read -r _ _ rest name <<< "$entry"
+                local display=$(titleize "$rest")
+                local link=$(rel_no_ext "$dir/$name")
+                echo "${indent}- [${display}](${link})" >> "$sidebar_tmp"
+              done
+            }
+
+            # Start sidebar with Home
+            echo "- [[Home]]" > "$sidebar_tmp"
+            emit_dir "wiki-stage" ""
+          fi
 
           echo "---- Staged files (wiki-stage) ----"
           ls -la wiki-stage || true
           echo
           echo "Markdown files detected:"
-          find wiki-stage -maxdepth 2 -type f -name '*.md' -print | sed 's/^/  - /'
+          find wiki-stage -type f -name '*.md' -print | sed 's/^/  - /'
           echo
-          if ! find wiki-stage -maxdepth 1 -type f -name '*.md' | grep -q .; then
+          if ! find wiki-stage -type f -name '*.md' | grep -q .; then
             echo "No markdown files found in Docs/. Ensure Docs/ contains .md files on the main branch."
             exit 1
           fi
