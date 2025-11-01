@@ -91,3 +91,89 @@ poetry run isort . --check --diff
 
 - DisallowedHost with 0.0.0.0: Set `ALLOWED_HOSTS=127.0.0.1,localhost,0.0.0.0` in `.env` (no brackets) and restart the server.
 
+## Require authentication on an endpoint
+
+Use DRF permissions on your views. For class-based views:
+
+```python
+# apps/public_api/views.py
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+
+class MyProtectedView(APIView):
+	permission_classes = [IsAuthenticated]
+
+	def get(self, request):
+		return Response({"message": f"Hello, {request.user.email}"})
+```
+
+For function-based views:
+
+```python
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+
+@api_view(["GET"]) 
+@permission_classes([IsAuthenticated])
+def my_protected_view(request):
+	return Response({"message": f"Hello, {request.user.email}"})
+```
+
+When using JWT, include the header: `Authorization: Bearer <access-token>`.
+
+## Rate limit an endpoint
+
+Global throttles are set in `settings.py` via `REST_FRAMEWORK.DEFAULT_THROTTLE_CLASSES` and `DEFAULT_THROTTLE_RATES`.
+To apply a specific rate to a view, use `ScopedRateThrottle` and a `throttle_scope` value, then define a rate for that scope in settings.
+
+Class-based view example:
+
+```python
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+
+class CreateSomethingView(APIView):
+	throttle_classes = [ScopedRateThrottle]
+	throttle_scope = "create_something"
+
+	def post(self, request):
+		# ... create logic ...
+		return Response({"ok": True})
+```
+
+Function-based view example:
+
+```python
+from rest_framework.decorators import api_view, throttle_classes
+from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
+
+
+@api_view(["POST"]) 
+@throttle_classes([ScopedRateThrottle])
+def create_something(request):
+	create_something.throttle_scope = "create_something"
+	return Response({"ok": True})
+```
+
+Add a matching rate in `settings.py` (already seeded with examples):
+
+```python
+REST_FRAMEWORK = {
+	# ...
+	"DEFAULT_THROTTLE_RATES": {
+		"anon": "100/day",
+		"user": "1000/day",
+		"admin": "100/day",
+		"create_something": "10/minute",  # custom scope
+	},
+}
+```
+
+
