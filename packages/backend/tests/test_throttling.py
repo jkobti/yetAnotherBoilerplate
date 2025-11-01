@@ -1,6 +1,28 @@
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.test.utils import override_settings
+import pytest
+
+# DRF binds throttle rates at import time. Overriding Django settings alone
+# does not update rest_framework.throttling.SimpleRateThrottle.THROTTLE_RATES
+# once it's imported. Ensure per-test rates by patching the class attribute.
+from rest_framework.throttling import SimpleRateThrottle
+
+
+@pytest.fixture(autouse=True)
+def _force_test_throttle_rates():
+    old_rates = SimpleRateThrottle.THROTTLE_RATES
+    # Create a shallow copy to avoid mutating the original mapping
+    new_rates = dict(old_rates)
+    new_rates.update({
+        "anon": "100/day",
+        "user": "2/minute",
+    })
+    SimpleRateThrottle.THROTTLE_RATES = new_rates
+    try:
+        yield
+    finally:
+        SimpleRateThrottle.THROTTLE_RATES = old_rates
 
 
 @override_settings(
