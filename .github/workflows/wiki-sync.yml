@@ -101,3 +101,8 @@ jobs:
           git commit -m "Sync Docs/ to Wiki [CI]"
           git push
           echo "Last wiki commit:" && git --no-pager log -1 --oneline
+
+      - name: Cleanup workspace artifacts
+        if: always()
+        run: |
+          rm -rf wiki-stage wiki || true

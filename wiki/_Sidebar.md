@@ -1,5 +1,0 @@
-- [[Home]]
-- [Backend Api](backend-api.md)
-- [Components Overview](components-overview.md)
-- [Frontend](frontend.md)
-- [K8s](k8s.md)
