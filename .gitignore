@@ -3,3 +3,4 @@
 # GitHub Wiki sync working directories (created by CI or local runs)
 wiki/
 wiki-stage/
+.DS_Store
