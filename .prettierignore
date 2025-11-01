@@ -1,0 +1,2 @@
+# Ignore generated Django migrations to avoid noisy prettifying
+packages/backend/**/migrations/

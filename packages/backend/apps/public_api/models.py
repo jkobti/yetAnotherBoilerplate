@@ -29,7 +29,12 @@ class APIKey(models.Model):
         return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
     @classmethod
-    def create_key(cls, organization: Organization, prefix: str | None = None, ttl_days: int | None = None) -> tuple["APIKey", str]:
+    def create_key(
+        cls,
+        organization: Organization,
+        prefix: str | None = None,
+        ttl_days: int | None = None,
+    ) -> tuple[APIKey, str]:
         prefix = prefix or secrets.token_urlsafe(8)[:8]
         raw_key = f"sk_{prefix}_{secrets.token_urlsafe(24)}"
         hashed = cls._hash(raw_key)
@@ -45,7 +50,9 @@ class APIKey(models.Model):
 
 class IdempotencyKey(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
     method = models.CharField(max_length=10)
     path = models.CharField(max_length=512)
     key = models.CharField(max_length=255)

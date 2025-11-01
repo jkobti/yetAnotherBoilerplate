@@ -207,7 +207,7 @@ Following the project's modularity principle, documentation endpoints should be 
        urlpatterns += [
            # The URL to the raw OpenAPI schema (used by the frontend)
            path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-           
+
            # The URL to the beautiful ReDoc UI
            path('api/docs/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
        ]

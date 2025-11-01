@@ -1,0 +1,37 @@
+# Minimal, fast hooks for this monorepo
+fail_fast: false
+
+repos:
+  # Generic hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+
+  # Python: Ruff formatter + linter (scoped to packages/backend)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        name: ruff (lint)
+        args: ["--fix"]
+        files: ^packages/backend/.*\.(py|pyi)$
+      - id: ruff-format
+        name: ruff (format)
+        files: ^packages/backend/.*\.(py|pyi)$
+
+  # Markdown/JSON/YAML formatting via Prettier
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        name: prettier
+        args: ["--write", "--ignore-unknown"]
+        files: '\\.(md|mdx|json|ya?ml)$'
+        additional_dependencies:
+          - prettier@3.3.3

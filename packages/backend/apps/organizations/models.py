@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+
 from django.conf import settings
 from django.db import models
 
@@ -9,7 +10,9 @@ class Organization(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name="owned_organizations", on_delete=models.CASCADE
+        settings.AUTH_USER_MODEL,
+        related_name="owned_organizations",
+        on_delete=models.CASCADE,
     )
     members = models.ManyToManyField(
         settings.AUTH_USER_MODEL, through="Membership", related_name="organizations"

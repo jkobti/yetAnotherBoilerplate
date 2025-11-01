@@ -131,7 +131,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 
-@api_view(["GET"]) 
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def my_protected_view(request):
 	return Response({"message": f"Hello, {request.user.email}"})
@@ -169,7 +169,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 
-@api_view(["POST"]) 
+@api_view(["POST"])
 @throttle_classes([ScopedRateThrottle])
 def create_something(request):
 	create_something.throttle_scope = "create_something"
@@ -202,5 +202,3 @@ Per-view override checklist
 - Add `throttle_classes = [ScopedRateThrottle]` on the view.
 - Set `throttle_scope = "your_scope"` on the view.
 - Define the rate under `REST_FRAMEWORK.DEFAULT_THROTTLE_RATES.your_scope`.
-
-

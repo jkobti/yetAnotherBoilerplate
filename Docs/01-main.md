@@ -66,4 +66,3 @@ Key notes:
 ## Kubernetes Operations Snapshot
 
 Kubernetes remains the default runtime for every component. Use Helm value toggles, Kustomize overlays, environment-driven flags, and feature-flag services to enable or disable workloads per environment. Day-two operations—repository layout, deployment workflows, CI/CD expectations, observability stack, ingress patterns, and validation guardrails—are documented in `Docs/k8s.md`. Treat that guide as the source of truth when evolving platform automation or onboarding new components.
-

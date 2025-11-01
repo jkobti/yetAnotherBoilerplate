@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+
 from django.conf import settings
 from django.db import models
 

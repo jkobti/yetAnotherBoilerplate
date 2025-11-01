@@ -1,7 +1,7 @@
+from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import path, include
-from django.conf import settings
+from django.urls import include, path
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 
@@ -20,7 +20,9 @@ urlpatterns = [
 if getattr(settings, "API_DOCS_ENABLED", False):
     urlpatterns += [
         # Default root redirects to API Docs when enabled
-        path("", RedirectView.as_view(pattern_name="redoc", permanent=False), name="root"),
+        path(
+            "", RedirectView.as_view(pattern_name="redoc", permanent=False), name="root"
+        ),
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
         path(
             "api/docs/",

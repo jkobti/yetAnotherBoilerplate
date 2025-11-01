@@ -1,4 +1,3 @@
-import os
 import ast
 from pathlib import Path
 
@@ -23,16 +22,16 @@ DEBUG = env("DEBUG")
 SECRET_KEY = env("SECRET_KEY")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 # Normalize ALLOWED_HOSTS for cases like ALLOWED_HOSTS=["*"] coming from .env
-if isinstance(ALLOWED_HOSTS, (list, tuple)) and len(ALLOWED_HOSTS) == 1:
+if isinstance(ALLOWED_HOSTS, list | tuple) and len(ALLOWED_HOSTS) == 1:
     only = ALLOWED_HOSTS[0]
     if isinstance(only, str) and only.strip().startswith("["):
         try:
             parsed = ast.literal_eval(only)
-            if isinstance(parsed, (list, tuple)):
+            if isinstance(parsed, list | tuple):
                 ALLOWED_HOSTS = [str(h).strip() for h in parsed]
         except Exception:
             pass
-if isinstance(ALLOWED_HOSTS, (list, tuple)):
+if isinstance(ALLOWED_HOSTS, list | tuple):
     ALLOWED_HOSTS = [str(h).strip() for h in ALLOWED_HOSTS]
 API_DOCS_ENABLED = env("API_DOCS_ENABLED")
 
@@ -185,18 +184,24 @@ EMAIL_BACKEND = _EMAIL_BACKENDS.get(EMAIL_PROVIDER, _EMAIL_BACKENDS["console"])
 
 # Provider-specific environment variables (optional)
 if EMAIL_PROVIDER == "mailgun":
-    ANYMAIL.update({
-        "MAILGUN_API_KEY": env("MAILGUN_API_KEY", default=""),
-        "MAILGUN_SENDER_DOMAIN": env("MAILGUN_DOMAIN", default=""),
-    })
+    ANYMAIL.update(
+        {
+            "MAILGUN_API_KEY": env("MAILGUN_API_KEY", default=""),
+            "MAILGUN_SENDER_DOMAIN": env("MAILGUN_DOMAIN", default=""),
+        }
+    )
 elif EMAIL_PROVIDER == "postmark":
-    ANYMAIL.update({
-        "POSTMARK_SERVER_TOKEN": env("POSTMARK_SERVER_TOKEN", default=""),
-    })
+    ANYMAIL.update(
+        {
+            "POSTMARK_SERVER_TOKEN": env("POSTMARK_SERVER_TOKEN", default=""),
+        }
+    )
 elif EMAIL_PROVIDER == "sendgrid":
-    ANYMAIL.update({
-        "SENDGRID_API_KEY": env("SENDGRID_API_KEY", default=""),
-    })
+    ANYMAIL.update(
+        {
+            "SENDGRID_API_KEY": env("SENDGRID_API_KEY", default=""),
+        }
+    )
 elif EMAIL_PROVIDER == "resend":
     # Use SMTP settings for Resend (or another provider offering SMTP relay)
     EMAIL_HOST = env("EMAIL_HOST", default="")
