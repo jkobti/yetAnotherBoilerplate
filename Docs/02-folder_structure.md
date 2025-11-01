@@ -41,7 +41,8 @@ This package now contains everything for your Django backend, including the buil
 ├── Dockerfile.worker     <-- Builds the Worker (runs Celery)
 │
 ├── manage.py
-├── requirements.txt      # All Python dependencies (Django, DRF, Celery, etc.)
+├── pyproject.toml        # Poetry-managed dependencies and project metadata
+├── poetry.lock           # Locked dependency versions for reproducible builds
 ├── celery_app.py         # Celery app definition (finds tasks)
 │
 ├── boilerplate/            # Your main Django project (rename as needed)

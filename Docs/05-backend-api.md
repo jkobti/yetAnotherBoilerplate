@@ -1,17 +1,18 @@
 # Backend API Service
 
-This document defines the core requirements, features, and architectural decisions for the primary API service (`packages/api/`), built using Django and Django REST Framework (DRF). The service is designed for modularity, high developer experience, and production readiness.
+This document defines the core requirements, features, and architectural decisions for the primary API service (`packages/backend/`), built using Django and Django REST Framework (DRF). The service is designed for modularity, high developer experience, and production readiness.
 
 ---
 
 ## 1. Core Technical Stack
 
-| Area              | Component                         | Note                                                                |
-| :---------------- | :-------------------------------- | :------------------------------------------------------------------ |
-| **Framework**     | Django                            | Recommended backend framework.                                      |
-| **API**           | Django REST Framework (DRF)       | Standard for building REST APIs on Django.                          |
-| **Database**      | PostgreSQL                        | Primary persistence layer, managed via Django ORM.                  |
-| **Documentation** | **`drf-spectacular`** + **ReDoc** | Automatic OpenAPI 3.0 generation paired with a modern rendering UI. |
+| Area              | Component                         | Note                                                                                           |
+| :---------------- | :-------------------------------- | :--------------------------------------------------------------------------------------------- |
+| **Framework**     | Django                            | Recommended backend framework.                                                                 |
+| **API**           | Django REST Framework (DRF)       | Standard for building REST APIs on Django.                                                     |
+| **Database**      | PostgreSQL                        | Primary persistence layer, managed via Django ORM.                                             |
+| **Documentation** | **`drf-spectacular`** + **ReDoc** | Automatic OpenAPI 3.0 generation paired with a modern rendering UI.                            |
+| **Dependencies**  | Poetry                            | Manage deps in `pyproject.toml`; lock with `poetry.lock`. Use `poetry add` / `poetry install`. |
 
 ---
 
