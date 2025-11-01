@@ -365,7 +365,7 @@ Requirements:
 
 - Authorization: enforce admin-only access via RBAC (e.g., Django groups/permissions or role claims in JWT/OIDC tokens). Deny by default.
 - Auditing: record who invoked an admin action, when, and with what parameters and outcome. Store audit logs in an append-only fashion where feasible.
-- Rate limiting: apply conservative throttles distinct from public endpoints to prevent abuse. Admin endpoints use DRF's ScopedRateThrottle with the scope name `admin`. Configure the rate under `REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["admin"]` (default `100/day`; tests may override to `2/minute`).
+- Rate limiting: by default, user-facing endpoints are throttled globally (Anon/User). Admin endpoints are NOT throttled by default to avoid impeding internal workflows. If desired, you can enable per-view throttles on admin endpoints using DRF's ScopedRateThrottle (e.g., `throttle_scope = "admin"`) and configure a rate under `REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]`.
 - Idempotency and safety: design write endpoints to be idempotent where possible; prefer explicit, narrowly scoped operations over generic commands.
 - CSRF and headers: for browser-based flows, ensure CSRF protection and strict security headers when accessed via the admin host/path.
 

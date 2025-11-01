@@ -145,7 +145,8 @@ REST_FRAMEWORK = {
         "anon": "100/day",
         "user": "1000/day",
         # Used by admin endpoints via throttle_scope = 'admin'
-        "admin": "100/day",
+        # Keep this tight by default to make abuse obvious in dev and tests.
+        "admin": "2/minute",
     },
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",

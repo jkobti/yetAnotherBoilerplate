@@ -9,6 +9,8 @@ from .models import AdminAudit
 
 class PingView(APIView):
     permission_classes = [IsAdminUser]
+    # Do not throttle admin endpoints by default; rely on RBAC and auditing.
+    throttle_classes: list = []
 
     def get(self, request):
         AdminAudit.objects.create(

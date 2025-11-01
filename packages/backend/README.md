@@ -2,6 +2,13 @@
 
 This package contains the Django backend for yetAnotherBoilerplate.
 
+
+How limits are counted
+
+- Authenticated requests: `UserRateThrottle` applies per authenticated user (each `request.user` has its own counter).
+- Anonymous requests: `AnonRateThrottle` applies per client IP address.
+- Scoped throttles: `ScopedRateThrottle` still counts per user (or per IP if anonymous), but maintains separate counters per `throttle_scope`.
+
 - Dependencies are managed with Poetry via `pyproject.toml` and `poetry.lock`.
 - Local development defaults to SQLite; set `DATABASE_URL` to use Postgres.
 - Custom user model uses email as the username (UUID primary key).
@@ -177,10 +184,23 @@ REST_FRAMEWORK = {
 	"DEFAULT_THROTTLE_RATES": {
 		"anon": "100/day",
 		"user": "1000/day",
-		"admin": "100/day",
+		"admin": "2/minute",
 		"create_something": "10/minute",  # custom scope
 	},
 }
 ```
+
+
+Admin endpoints
+
+- By default, admin views are not throttled to avoid slowing internal workflows. Rely on RBAC and auditing.
+- If you want to throttle an admin view, add `ScopedRateThrottle` plus a scope (e.g., `admin`) on that view, and define its rate under `REST_FRAMEWORK.DEFAULT_THROTTLE_RATES`.
+- When throttled, responses use HTTP 429 and include a `Retry-After` header; our problem-details error wrapper preserves these headers.
+
+Per-view override checklist
+
+- Add `throttle_classes = [ScopedRateThrottle]` on the view.
+- Set `throttle_scope = "your_scope"` on the view.
+- Define the rate under `REST_FRAMEWORK.DEFAULT_THROTTLE_RATES.your_scope`.
 
 

@@ -25,4 +25,13 @@ def problem_details_handler(exc: Exception, context: dict[str, Any]) -> Response
     if isinstance(detail, dict):
         problem["errors"] = detail
 
-    return Response(problem, status=status)
+    # Preserve headers set by DRF (e.g., Retry-After from throttling)
+    new_response = Response(problem, status=status)
+    try:
+        for k, v in response.headers.items():
+            new_response[k] = v
+    except Exception:
+        # If headers are not accessible for some reason, fall back silently
+        pass
+
+    return new_response
