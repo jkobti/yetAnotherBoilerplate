@@ -62,62 +62,59 @@ jobs:
             emit_dir() {
               local dir="$1"
               local indent="$2"
-              # List directories and files, compute sort keys from numeric prefixes
-              # Collect directories
-              mapfile -t DIRS < <(find "$dir" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' 2>/dev/null | while read -r d; do
-                # skip hidden and underscore-prefixed folders
-                [ "${d#_}" != "$d" ] && continue
-                read -r num rest < <(strip_prefix "$d")
-                printf '%s|D|%s|%s\n' "$num" "$rest" "$d"
-              done | sort -t '|' -k1,1n -k3,3f)
-
-              # Collect files and de-duplicate by base name preferring lowest numeric prefix
-              mapfile -t FILES_RAW < <(find "$dir" -maxdepth 1 -mindepth 1 -type f -name '*.md' -printf '%f\n' 2>/dev/null | while read -r f; do
-                # skip special files
-                [ "$f" = "_Sidebar.md" ] && continue
-                [ "$f" = "Home.md" ] && continue
-                [ "${f#_}" != "$f" ] && continue
-                read -r num rest < <(strip_prefix "$f")
-                printf '%s|%s|%s\n' "$num" "$rest" "$f"
-              done)
-              # Build associative array: best[file_base]=num|filename (lowest num wins)
-              declare -A BEST
-              for entry in "${FILES_RAW[@]}"; do
-                IFS='|' read -r num rest name <<< "$entry"
-                key="$rest"
-                if [[ -z "${BEST[$key]}" ]]; then
-                  BEST[$key]="$num|$name"
+              shopt -s nullglob
+              local entries=()
+              # Directories
+              for full in "$dir"/*/; do
+                local name="${full%/}"
+                name="${name##*/}"
+                [[ "$name" == _* ]] && continue
+                local num rest
+                if [[ "$name" =~ ^([0-9]+)[._-]+(.*)$ ]]; then
+                  num="${BASH_REMATCH[1]}"; rest="${BASH_REMATCH[2]}"
                 else
-                  IFS='|' read -r best_num best_name <<< "${BEST[$key]}"
-                  if (( 10#$num < 10#$best_num )); then
-                    BEST[$key]="$num|$name"
-                  fi
+                  num=999999; rest="$name"
+                fi
+                entries+=("$num|D|$rest|$name")
+              done
+              # Files (dedupe by base name, prefer lowest numeric prefix)
+              declare -A BEST=()
+              for full in "$dir"/*.md; do
+                local f="${full##*/}"
+                [[ "$f" == "_Sidebar.md" || "$f" == "Home.md" || "$f" == _* ]] && continue
+                local num rest
+                if [[ "$f" =~ ^([0-9]+)[._-]+(.*)$ ]]; then
+                  num="${BASH_REMATCH[1]}"; rest="${BASH_REMATCH[2]}"
+                else
+                  num=999999; rest="$f"
+                fi
+                if [[ -z "${BEST[$rest]+x}" || 10#$num -lt 10#${BEST[$rest]%%|*} ]]; then
+                  BEST["$rest"]="$num|$f"
                 fi
               done
-              FILES=()
               for key in "${!BEST[@]}"; do
-                IFS='|' read -r num name <<< "${BEST[$key]}"
-                # Keep original 'rest' for display from key
-                FILES+=("$num|F|$key|$name")
+                local pair="${BEST[$key]}"
+                local num="${pair%%|*}"
+                local name="${pair#*|}"
+                entries+=("$num|F|$key|$name")
               done
-              # Sort by numeric then display key
-              IFS=$'\n' FILES=($(printf "%s\n" "${FILES[@]}" | sort -t '|' -k1,1n -k3,3f)); unset IFS
-
-              # Emit directories first
-              for entry in "${DIRS[@]}"; do
-                IFS='|' read -r _ _ rest name <<< "$entry"
-                local display=$(titleize "$rest")
-                echo "${indent}- ${display}" >> "$sidebar_tmp"
-                emit_dir "$dir/$name" "${indent}  "
-              done
-
-              # Then files
-              for entry in "${FILES[@]}"; do
-                IFS='|' read -r _ _ rest name <<< "$entry"
-                local display=$(titleize "$rest")
-                local link=$(rel_no_ext "$dir/$name")
-                echo "${indent}- [${display}](${link})" >> "$sidebar_tmp"
-              done
+              # Sort and emit
+              if ((${#entries[@]})); then
+                IFS=$'\n' read -r -d '' -a sorted < <(printf "%s\n" "${entries[@]}" | sort -t '|' -k1,1n -k2,2 -k3,3f && printf '\0')
+                unset IFS
+                for entry in "${sorted[@]}"; do
+                  IFS='|' read -r num type rest name <<< "$entry"
+                  if [[ "$type" == "D" ]]; then
+                    local display=$(titleize "$rest")
+                    echo "${indent}- ${display}" >> "$sidebar_tmp"
+                    emit_dir "$dir/$name" "${indent}  "
+                  else
+                    local display=$(titleize "$rest")
+                    local link=$(rel_no_ext "$dir/$name")
+                    echo "${indent}- [${display}](${link})" >> "$sidebar_tmp"
+                  fi
+                done
+              fi
             }
 
             # Start sidebar with Home
