@@ -75,6 +75,9 @@ jobs:
             exit 1
           fi
 
+          # Ensure a clean clone target to avoid residual directories across runs
+          rm -rf wiki
+
           # Clone the wiki repository (separate .wiki repo)
           git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.wiki.git" wiki || {
             echo "Failed to clone wiki repository. Verify the wiki exists (create the first page) and token has access." >&2
