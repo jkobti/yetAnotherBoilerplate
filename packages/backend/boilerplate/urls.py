@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
@@ -25,9 +25,16 @@ if getattr(settings, "API_DOCS_ENABLED", False):
             SpectacularRedocView.as_view(url_name="schema"),
             name="redoc",
         ),
+        path("api/", include("apps.public_api.urls")),
     ]
 else:
     # Without docs, land the root on a simple health/status endpoint
     urlpatterns += [
         path("", health_view, name="root"),
+        path("api/", include("apps.public_api.urls")),
     ]
+
+# Admin API (separate namespace)
+urlpatterns += [
+    path("admin/api/", include("apps.admin_api.urls")),
+]

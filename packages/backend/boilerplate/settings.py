@@ -47,8 +47,13 @@ INSTALLED_APPS = [
     # 3rd party
     "rest_framework",
     "drf_spectacular",
+    "anymail",
     # Local apps
     "apps.users",
+    "apps.organizations",
+    "apps.notifications",
+    "apps.public_api",
+    "apps.admin_api",
 ]
 
 MIDDLEWARE = [
@@ -121,9 +126,23 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# DRF config (basic defaults)
+# DRF config: schema, pagination, throttling, errors
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 25,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+        # Used by admin endpoints via throttle_scope = 'admin'
+        "admin": "100/day",
+    },
+    "EXCEPTION_HANDLER": "boilerplate.exceptions.problem_details_handler",
 }
 
 # drf-spectacular config
@@ -132,3 +151,48 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "OpenAPI schema for the example backend.",
     "VERSION": "0.1.0",
 }
+
+# Email / Anymail
+EMAIL_PROVIDER = env("EMAIL_PROVIDER", default="console").lower()
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@example.local")
+
+ANYMAIL = {
+    # per-provider API keys are read from env in provider-specific settings below
+}
+
+_EMAIL_BACKENDS = {
+    "console": "django.core.mail.backends.console.EmailBackend",
+    "smtp": "django.core.mail.backends.smtp.EmailBackend",
+    "mailgun": "anymail.backends.mailgun.EmailBackend",
+    "postmark": "anymail.backends.postmark.EmailBackend",
+    "sendgrid": "anymail.backends.sendgrid.EmailBackend",
+    # Resend is not natively supported by django-anymail; use SMTP fallback
+    "resend": "django.core.mail.backends.smtp.EmailBackend",
+}
+
+EMAIL_BACKEND = _EMAIL_BACKENDS.get(EMAIL_PROVIDER, _EMAIL_BACKENDS["console"])
+
+# Provider-specific environment variables (optional)
+if EMAIL_PROVIDER == "mailgun":
+    ANYMAIL.update({
+        "MAILGUN_API_KEY": env("MAILGUN_API_KEY", default=""),
+        "MAILGUN_SENDER_DOMAIN": env("MAILGUN_DOMAIN", default=""),
+    })
+elif EMAIL_PROVIDER == "postmark":
+    ANYMAIL.update({
+        "POSTMARK_SERVER_TOKEN": env("POSTMARK_SERVER_TOKEN", default=""),
+    })
+elif EMAIL_PROVIDER == "sendgrid":
+    ANYMAIL.update({
+        "SENDGRID_API_KEY": env("SENDGRID_API_KEY", default=""),
+    })
+elif EMAIL_PROVIDER == "resend":
+    # Use SMTP settings for Resend (or another provider offering SMTP relay)
+    EMAIL_HOST = env("EMAIL_HOST", default="")
+    EMAIL_PORT = env("EMAIL_PORT", default=587)
+    EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+    EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+    EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True)
+
+# Idempotency middleware
+MIDDLEWARE.insert(0, "boilerplate.middleware.IdempotencyMiddleware")

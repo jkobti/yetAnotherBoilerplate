@@ -56,6 +56,17 @@ Quick checks:
 - API docs (if `API_DOCS_ENABLED=true`): http://localhost:8000/api/docs/
  - Root path `/` redirects to `/api/docs/` when docs are enabled; otherwise it serves the health endpoint.
 
+Formatting imports (backend only):
+
+```zsh
+cd packages/backend
+# Sort imports in-place per isort config in this package
+poetry run isort .
+
+# Check mode (CI-friendly)
+poetry run isort . --check --diff
+```
+
 Troubleshooting:
 
 - DisallowedHost with 0.0.0.0: Set `ALLOWED_HOSTS=127.0.0.1,localhost,0.0.0.0` in `.env` (no brackets). Restart the dev server.
