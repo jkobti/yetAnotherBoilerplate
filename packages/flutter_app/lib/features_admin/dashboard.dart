@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ui_kit/ui_kit.dart';
 
 import '../core/api_client.dart';
 import '../core/auth/auth_repository.dart';
@@ -69,7 +70,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    FilledButton(
+                    PrimaryButton(
                       onPressed: _loading ? null : _checkHealth,
                       child: _loading
                           ? const SizedBox(

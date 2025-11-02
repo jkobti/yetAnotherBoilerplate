@@ -4,6 +4,8 @@ This document captures the detailed guidance for building and operating the clie
 
 > Current status (Nov 2025): The Flutter project is initialized with web support and two entry points: `lib/main.dart` (Customer) and `lib/main_admin.dart` (Admin). Mobile platform wrappers (iOS/Android) will be added later.
 
+> UI kit: A shared Flutter package now lives at `packages/ui_kit/` with theme tokens (spacing, color-seeded themes) and a `PrimaryButton` widget. The web apps consume it via a local path dependency.
+
 ## 1. Core Stack
 
 | Layer                | Recommendation                             | Notes                                                     |

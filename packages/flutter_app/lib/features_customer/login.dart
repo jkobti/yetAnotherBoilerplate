@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ui_kit/ui_kit.dart';
 
 import '../core/auth/auth_repository.dart';
 import '../core/api_client.dart';
@@ -70,7 +71,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   if (_error != null)
                     Text(_error!, style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 8),
-                  FilledButton(
+                  PrimaryButton(
                     onPressed: _loading ? null : _submit,
                     child: _loading
                         ? const SizedBox(

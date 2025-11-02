@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ui_kit/ui_kit.dart';
 
 import 'core/router.dart';
 
@@ -12,8 +13,7 @@ class CustomerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme =
-        ThemeData(colorSchemeSeed: const Color(0xFF0066FF), useMaterial3: true);
+    final theme = YabTheme.customer();
     return MaterialApp.router(
       title: 'Customer App',
       theme: theme,

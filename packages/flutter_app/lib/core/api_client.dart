@@ -28,7 +28,9 @@ class ApiClient {
   Dio get dio => _dio;
 
   // Track current token value for potential future refresh workflows.
-  String? get accessToken => _dio.options.headers['Authorization']?.toString().replaceFirst('Bearer ', '');
+  String? get accessToken => _dio.options.headers['Authorization']
+      ?.toString()
+      .replaceFirst('Bearer ', '');
 
   Future<void> initFromStorage() async {
     final storage = TokenStorage();
@@ -43,7 +45,7 @@ class ApiClient {
       _dio.options.headers.remove('Authorization');
     } else {
       _dio.options.headers['Authorization'] = 'Bearer $token';
-    }r
+    }
   }
 
   Future<Map<String, dynamic>> health() async {
@@ -51,7 +53,8 @@ class ApiClient {
     return resp.data as Map<String, dynamic>;
   }
 
-  Future<Map<String, dynamic>> login({required String email, required String password}) async {
+  Future<Map<String, dynamic>> login(
+      {required String email, required String password}) async {
     final resp = await _dio.post('/api/auth/jwt/token/', data: {
       'email': email,
       'password': password,

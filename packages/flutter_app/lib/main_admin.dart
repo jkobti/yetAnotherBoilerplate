@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ui_kit/ui_kit.dart';
 
 import 'core/router.dart';
 
@@ -12,8 +13,7 @@ class AdminApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme =
-        ThemeData(colorSchemeSeed: const Color(0xFF0E7C66), useMaterial3: true);
+    final theme = YabTheme.admin();
     return MaterialApp.router(
       title: 'Admin Portal',
       theme: theme,
