@@ -1,0 +1,13 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-raw-types: true
+  errors:
+    avoid_print: warning
+    todo: info
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    always_declare_return_types: true

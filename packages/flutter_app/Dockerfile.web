@@ -1,0 +1,28 @@
+# Build Flutter web app (customer)
+FROM ghcr.io/cirruslabs/flutter:3.24.0 AS build
+WORKDIR /app
+COPY . .
+# Inject API base on build via --build-arg or use default from code
+RUN flutter config --enable-web && \
+    flutter pub get && \
+    flutter build web --release --web-renderer canvaskit --dart-define=API_BASE_URL=${API_BASE_URL:-http://localhost:8000}
+
+FROM nginx:1.27-alpine
+COPY --from=build /app/build/web /usr/share/nginx/html
+COPY <<'EOF' /etc/nginx/conf.d/default.conf
+server {
+  listen 80;
+  server_name _;
+  root /usr/share/nginx/html;
+
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  # Pass through API calls to upstream if running sidecar; adjust in k8s ingress otherwise
+  location /api/ {
+    add_header Access-Control-Allow-Origin *;
+    proxy_pass http://backend:8000;
+  }
+}
+EOF

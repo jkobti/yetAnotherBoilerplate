@@ -1,0 +1,25 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+build/
+flutter_*.png
+flutter_*.jpg
+**/Generated.xcconfig
+**/Pods/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+.gradle/
+.idea/
+android/.gradle/
+android/local.properties
+ios/Flutter/Generated.xcconfig
+ios/Flutter/Flutter.podspec
+ios/Podfile.lock
+pubspec.lock
+
+# VSCode
+.vscode/
+
+# Web build
+web/.dart_tool/

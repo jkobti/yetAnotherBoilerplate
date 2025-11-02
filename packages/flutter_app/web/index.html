@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="description" content="yetAnotherBoilerplate Flutter web app" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="/" />
+    <title>Flutter Web</title>
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#000000" />
+    <style>
+        /* Minimal styling while Flutter initializes */
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            background: #0b0f14;
+            color: #e9eef5;
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        }
+    </style>
+    <script src="flutter.js" defer></script>
+</head>
+
+<body>
+    <script>
+        // Standard Flutter web bootstrap
+        window.addEventListener('load', function () {
+            if (typeof _flutter === 'undefined' || !_flutter.loader) {
+                console.error('Flutter loader not found.');
+                return;
+            }
+            _flutter.loader
+                .loadEntrypoint({
+                    // In dev we avoid service workers to simplify reloads
+                    serviceWorker: { disabled: true },
+                })
+                .then(function (engineInitializer) {
+                    return engineInitializer.initializeEngine();
+                })
+                .then(function (appRunner) {
+                    return appRunner.runApp();
+                })
+                .catch(function (e) {
+                    console.error('Failed to load Flutter app:', e);
+                });
+        });
+    </script>
+</body>
+
+</html>

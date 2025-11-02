@@ -2,6 +2,8 @@
 
 This document captures the detailed guidance for building and operating the client applications that ship with the yetanotherboilerplate project. A single Flutter codebase targets web, iOS, and Android; this doc expands on the core stack, optional integrations, and platform-specific release processes.
 
+> Current status (Nov 2025): The Flutter project is initialized with web support and two entry points: `lib/main.dart` (Customer) and `lib/main_admin.dart` (Admin). Mobile platform wrappers (iOS/Android) will be added later.
+
 ## 1. Core Stack
 
 | Layer                | Recommendation                             | Notes                                                     |
