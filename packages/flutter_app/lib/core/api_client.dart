@@ -7,9 +7,9 @@ class ApiClient {
             baseUrl: _baseUrl,
             connectTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 15),
+            // Do NOT set Content-Type globally to avoid CORS preflight on GET.
             headers: {
               'Accept': 'application/json',
-              'Content-Type': 'application/json',
             },
           ),
         );

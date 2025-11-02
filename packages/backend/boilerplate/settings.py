@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # 3rd party
+    "corsheaders",
     "rest_framework",
     "drf_spectacular",
     "anymail",
@@ -59,6 +60,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # must be high in the chain
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -227,3 +229,17 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "sub",
 }
+
+# CORS (allow Flutter web dev server by default in DEBUG)
+try:
+    # env may not have these keys; keep defaults sensible for dev
+    CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=DEBUG)
+except Exception:  # pragma: no cover - env helper guards
+    CORS_ALLOW_ALL_ORIGINS = DEBUG
+
+# If not allowing all, permit localhost:* during development for convenience
+if not CORS_ALLOW_ALL_ORIGINS:
+    CORS_ALLOWED_ORIGIN_REGEXES = env.list(
+        "CORS_ALLOWED_ORIGIN_REGEXES",
+        default=[r"^http://localhost:\\d+$", r"^http://127\\.0\\.0\\.1:\\d+$"],
+    )

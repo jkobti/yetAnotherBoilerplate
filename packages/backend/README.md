@@ -46,6 +46,24 @@ Endpoints (dev defaults):
 - API docs (if `API_DOCS_ENABLED=true`): http://localhost:8000/api/docs/
 - Root `/` redirects to `/api/docs/` when docs are enabled; otherwise it serves the health endpoint.
 
+### CORS for web development
+
+When running the Flutter web app from `flutter run -d chrome`, it serves from a random localhost port, which is a different origin than the Django dev server. To allow cross-origin calls during development we enable CORS by default in `DEBUG` mode using `django-cors-headers`.
+
+If you haven't installed dependencies after pulling changes, install them:
+
+```zsh
+cd packages/backend
+poetry install
+```
+
+You can also explicitly control CORS via environment variables:
+
+- `CORS_ALLOW_ALL_ORIGINS` (default: `DEBUG`)
+- `CORS_ALLOWED_ORIGIN_REGEXES` (default: allow `http://localhost:*` and `http://127.0.0.1:*`)
+
+For production, set explicit allowed origins instead of allowing all.
+
 ## JWT authentication
 
 Endpoints:
