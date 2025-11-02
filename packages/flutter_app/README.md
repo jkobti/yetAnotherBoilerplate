@@ -25,6 +25,12 @@ flutter run -d chrome -t lib/main_admin.dart --dart-define API_BASE_URL=http://l
 
 The Home/Dashboard screen includes a "health" button that calls `GET /health/` on the backend and shows the status.
 
+Auth demo:
+
+- Visit `/login` to sign in with email/password (uses `POST /api/auth/jwt/token/`).
+- After login, Home shows your email via `GET /api/v1/me` and a Logout button.
+- Admin Dashboard shows whether you're an admin based on `is_staff`.
+
 ## Builds
 
 - Customer web build:

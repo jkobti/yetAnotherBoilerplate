@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../core/api_client.dart';
+import '../core/auth/auth_repository.dart';
+import '../core/auth/token_storage.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -14,6 +17,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _status = 'unknown';
   bool _loading = false;
   String? _error;
+  Map<String, dynamic>? _me;
 
   Future<void> _checkHealth() async {
     setState(() {
@@ -34,6 +38,25 @@ class _HomePageState extends ConsumerState<HomePage> {
         setState(() => _loading = false);
       }
     }
+  }
+
+  Future<void> _loadAuthAndMe() async {
+    final repo = AuthRepository(ApiClient.I, TokenStorage());
+    await repo.init();
+    final me = await repo.me();
+    if (mounted) setState(() => _me = me);
+  }
+
+  Future<void> _logout() async {
+    final repo = AuthRepository(ApiClient.I, TokenStorage());
+    await repo.logout();
+    if (mounted) setState(() => _me = null);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAuthAndMe();
   }
 
   @override
@@ -63,6 +86,27 @@ class _HomePageState extends ConsumerState<HomePage> {
                         )
                       : const Text('Check health'),
                 ),
+                const SizedBox(height: 24),
+                if (_me == null) ...[
+                  const Text('You are not signed in.'),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: () => context.go('/login'),
+                    child: const Text('Go to Login'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => context.go('/signup'),
+                    child: const Text('Create an account'),
+                  ),
+                ] else ...[
+                  Text('Signed in as: ${_me!['email']}'),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: _logout,
+                    child: const Text('Logout'),
+                  ),
+                ],
               ],
             ),
           ),

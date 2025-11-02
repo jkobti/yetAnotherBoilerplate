@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'auth/token_storage.dart';
 
 class ApiClient {
   ApiClient._internal()
@@ -26,8 +27,62 @@ class ApiClient {
 
   Dio get dio => _dio;
 
+  // Track current token value for potential future refresh workflows.
+  String? get accessToken => _dio.options.headers['Authorization']?.toString().replaceFirst('Bearer ', '');
+
+  Future<void> initFromStorage() async {
+    final storage = TokenStorage();
+    final token = await storage.getAccessToken();
+    if (token != null && token.isNotEmpty) {
+      setAuthToken(token);
+    }
+  }
+
+  void setAuthToken(String? token) {
+    if (token == null || token.isEmpty) {
+      _dio.options.headers.remove('Authorization');
+    } else {
+      _dio.options.headers['Authorization'] = 'Bearer $token';
+    }r
+  }
+
   Future<Map<String, dynamic>> health() async {
     final resp = await _dio.get('/health/');
     return resp.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> login({required String email, required String password}) async {
+    final resp = await _dio.post('/api/auth/jwt/token/', data: {
+      'email': email,
+      'password': password,
+    });
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  Future<Map<String, dynamic>> refresh({required String refreshToken}) async {
+    final resp = await _dio.post('/api/auth/jwt/refresh/', data: {
+      'refresh': refreshToken,
+    });
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  Future<Map<String, dynamic>> me() async {
+    final resp = await _dio.get('/api/v1/me');
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  Future<Map<String, dynamic>> register({
+    required String email,
+    required String password,
+    String? firstName,
+    String? lastName,
+  }) async {
+    final resp = await _dio.post('/api/auth/register/', data: {
+      'email': email,
+      'password': password,
+      if (firstName != null) 'first_name': firstName,
+      if (lastName != null) 'last_name': lastName,
+    });
+    return (resp.data as Map).cast<String, dynamic>();
   }
 }

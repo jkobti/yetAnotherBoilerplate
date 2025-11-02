@@ -72,6 +72,35 @@ Endpoints:
 - Refresh access: `POST /api/auth/jwt/refresh/` → `{ "access": "..." }`
 - Verify token: `POST /api/auth/jwt/verify/`
 
+## Registration
+
+- Create account: `POST /api/auth/register/`
+
+Request body:
+
+```json
+{
+	"email": "user@example.com",
+	"password": "<min 8 chars>",
+	"first_name": "Optional",
+	"last_name": "Optional"
+}
+```
+
+Response (201):
+
+```json
+{
+	"access": "<access>",
+	"refresh": "<refresh>",
+	"user": { "id": "...", "email": "user@example.com", "is_staff": false, ... }
+}
+```
+
+Notes:
+- The endpoint is throttled via `AnonRateThrottle` and validates unique email.
+- For production, consider email verification before issuing tokens.
+
 Usage:
 
 ```http

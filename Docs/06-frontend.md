@@ -151,3 +151,9 @@ Suggested environment variables:
 | `ADMIN_PORTAL_BASE_URL` | External URL of the deployed admin portal (if separate). |
 
 Build & deploy follow the same web pipeline as other Flutter web targets; see `Docs/k8s.md` for routing and ingress setup.
+
+### Auth demo (web)
+
+- Login: `/login` → uses `POST /api/auth/jwt/token/` and stores tokens in localStorage.
+- Sign up: `/signup` → uses `POST /api/auth/register/` to create an account and returns tokens.
+- Current user: Home screen calls `GET /api/v1/me` and shows email; Admin portal shows admin status via `is_staff`.

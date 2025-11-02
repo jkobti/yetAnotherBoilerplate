@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import get_user_model
+from rest_framework import serializers, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class MeView(APIView):
@@ -19,3 +23,51 @@ class MeView(APIView):
             "date_joined": user.date_joined.isoformat(),
         }
         return Response({"data": data})
+
+
+User = get_user_model()
+
+
+class RegisterSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(min_length=8, write_only=True)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Email already registered")
+        return value
+
+    def create(self, validated_data):
+        return User.objects.create_user(
+            email=validated_data["email"],
+            password=validated_data["password"],
+            first_name=validated_data.get("first_name", ""),
+            last_name=validated_data.get("last_name", ""),
+        )
+
+
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        # Issue JWT tokens for convenience in demos
+        refresh = RefreshToken.for_user(user)
+        data = {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "is_staff": user.is_staff,
+                "date_joined": user.date_joined.isoformat(),
+            },
+        }
+        return Response(data, status=status.HTTP_201_CREATED)
