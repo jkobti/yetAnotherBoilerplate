@@ -11,8 +11,10 @@ env = environ.Env(
     SECRET_KEY=(str, "dev-insecure-secret-key"),
     ALLOWED_HOSTS=(list, ["*"]),
     API_DOCS_ENABLED=(bool, True),
+    FCM_SERVER_KEY=(str, ""),
+    GOOGLE_APPLICATION_CREDENTIALS=(str, ""),  # path to service account JSON (HTTP v1)
+    GOOGLE_SERVICE_ACCOUNT_JSON=(str, ""),  # alternatively, raw JSON string
 )
-
 # Load .env if present at project root (packages/backend/.env)
 env_file = BASE_DIR / ".env"
 if env_file.exists():
@@ -34,7 +36,20 @@ if isinstance(ALLOWED_HOSTS, list | tuple) and len(ALLOWED_HOSTS) == 1:
 if isinstance(ALLOWED_HOSTS, list | tuple):
     ALLOWED_HOSTS = [str(h).strip() for h in ALLOWED_HOSTS]
 API_DOCS_ENABLED = env("API_DOCS_ENABLED")
+FCM_SERVER_KEY = env("FCM_SERVER_KEY")
 
+# Resolve GOOGLE_APPLICATION_CREDENTIALS path relative to BASE_DIR if not absolute
+_gac = env("GOOGLE_APPLICATION_CREDENTIALS")
+if _gac and not _gac.startswith("/"):
+    GOOGLE_APPLICATION_CREDENTIALS = str(BASE_DIR / _gac)
+else:
+    GOOGLE_APPLICATION_CREDENTIALS = _gac
+
+GOOGLE_SERVICE_ACCOUNT_JSON = env("GOOGLE_SERVICE_ACCOUNT_JSON")
+
+# Debug prints
+print(f"GOOGLE_APPLICATION_CREDENTIALS: {GOOGLE_APPLICATION_CREDENTIALS}")
+print(f"GOOGLE_SERVICE_ACCOUNT_JSON: {GOOGLE_SERVICE_ACCOUNT_JSON}")
 # Applications
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -147,7 +162,7 @@ REST_FRAMEWORK = {
         "user": "1000/day",
         # Used by admin endpoints via throttle_scope = 'admin'
         # Keep this tight by default to make abuse obvious in dev and tests.
-        "admin": "2/minute",
+        "admin": "100/minute",
     },
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",

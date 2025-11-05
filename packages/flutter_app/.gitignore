@@ -23,3 +23,7 @@ pubspec.lock
 
 # Web build
 web/.dart_tool/
+
+# Local env/config
+.env
+env/local.json

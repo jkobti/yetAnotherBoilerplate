@@ -6,6 +6,7 @@ import 'package:ui_kit/ui_kit.dart';
 import '../core/api_client.dart';
 import '../core/auth/auth_repository.dart';
 import '../core/auth/token_storage.dart';
+import '../core/push/push_service.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -107,6 +108,27 @@ class _HomePageState extends ConsumerState<HomePage> {
                     onPressed: _logout,
                     child: const Text('Logout'),
                   ),
+                  const SizedBox(height: 24),
+                  if (PushService.isEnabled)
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Push notifications demo'),
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              onPressed: () => PushService.initializeAndRegister(context),
+                              child: const Text('Enable push'),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text('Incoming messages will appear as a Snackbar while this tab is active.'),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ],
             ),

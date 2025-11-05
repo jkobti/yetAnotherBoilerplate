@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import '../core/api_client.dart';
 import '../core/auth/auth_repository.dart';
 import '../core/auth/token_storage.dart';
+import '../core/push/push_service.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
   const AdminDashboardPage({super.key});
@@ -85,11 +87,63 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                 const SizedBox(height: 24),
                 if (_me == null) ...[
                   const Text('Not signed in. Admin features require login.'),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: () => context.go('/login'),
+                    child: const Text('Go to Login'),
+                  ),
                 ] else if (!(_me!['is_staff'] == true)) ...[
                   const Text('You are signed in but not an admin.'),
                 ] else ...[
                   Text('Welcome, ${_me!['email']} (admin)'),
                 ],
+                const SizedBox(height: 24),
+                if (PushService.isEnabled)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Push notifications (admin demo)'),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              OutlinedButton(
+                                onPressed: () => PushService.initializeAndRegister(context),
+                                child: const Text('Enable push on this device'),
+                              ),
+                              if (_me != null && (_me!['is_staff'] == true))
+                                PrimaryButton(
+                                  onPressed: () async {
+                                    try {
+                                      await ApiClient.I.dio.post('/admin/api/push/send-test');
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Sent test push to recent tokens')),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Failed to send push: $e')),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  child: const Text('Send test push (recent tokens)'),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text('Foreground messages will show as a Snackbar. Background notifications require service worker setup.'),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

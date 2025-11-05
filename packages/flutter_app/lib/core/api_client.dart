@@ -88,4 +88,16 @@ class ApiClient {
     });
     return (resp.data as Map).cast<String, dynamic>();
   }
+
+  Future<void> registerPushToken({
+    required String token,
+    String platform = 'web',
+    String? userAgent,
+  }) async {
+    await _dio.post('/api/push/register/', data: {
+      'token': token,
+      'platform': platform,
+      if (userAgent != null) 'user_agent': userAgent,
+    });
+  }
 }

@@ -5,13 +5,14 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from .views import MeView, RegisterView
+from .views import MeView, PushRegisterView, RegisterView
 
 app_name = "public_api"
 
 urlpatterns = [
     path("v1/me", MeView.as_view(), name="me"),
     path("auth/register/", RegisterView.as_view(), name="register"),
+    path("push/register/", PushRegisterView.as_view(), name="push-register"),
     # JWT Auth
     path("auth/jwt/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/jwt/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

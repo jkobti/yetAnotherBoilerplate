@@ -67,6 +67,107 @@ Serve behind an ingress or proxy; the default NGINX config rewrites unknown path
 - `API_BASE_URL` (required): root URL for API calls, e.g., `http://localhost:8000`.
 - Optional toggles from Docs/06-frontend.md (e.g., Sentry) can be added via additional `--dart-define` values.
 
+### Use a config file (recommended)
+
+Flutter supports passing many `--dart-define` values from a JSON file.
+
+1) Copy the example file and fill in values:
+
+```zsh
+cp env/local.json.example env/local.json
+```
+
+2) Run with the config file:
+
+```zsh
+flutter run -d chrome -t lib/main.dart --dart-define-from-file=env/local.json
+```
+
+Admin portal:
+
+```zsh
+flutter run -d chrome -t lib/main_admin.dart --dart-define-from-file=env/local.json
+```
+
+The file format is simple JSON key/value pairs. See `env/local.json.example`.
+
+### Push notifications (web demo)
+
+This project includes a minimal FCM Web Push demo behind a feature flag. Foreground messages are handled inside the app; background notifications require configuring the service worker.
+
+Enable with the following defines (replace with your Firebase Web App config):
+
+```
+--dart-define PUSH_NOTIFICATIONS_ENABLED=true \
+--dart-define FIREBASE_API_KEY=... \
+--dart-define FIREBASE_APP_ID=... \
+--dart-define FIREBASE_MESSAGING_SENDER_ID=... \
+--dart-define FIREBASE_PROJECT_ID=... \
+--dart-define FIREBASE_VAPID_KEY=...
+```
+
+Optional:
+
+```
+--dart-define FIREBASE_AUTH_DOMAIN=... \
+--dart-define FIREBASE_STORAGE_BUCKET=...
+```
+
+Run (customer):
+
+```zsh
+flutter run -d chrome -t lib/main.dart \
+	--dart-define API_BASE_URL=http://localhost:8000 \
+	--dart-define PUSH_NOTIFICATIONS_ENABLED=true \
+	--dart-define FIREBASE_API_KEY=... \
+	--dart-define FIREBASE_APP_ID=... \
+	--dart-define FIREBASE_MESSAGING_SENDER_ID=... \
+	--dart-define FIREBASE_PROJECT_ID=... \
+	--dart-define FIREBASE_VAPID_KEY=...
+```
+
+Or, add these values into `env/local.json` and run with `--dart-define-from-file=env/local.json` as shown above.
+
+Run (admin):
+
+```zsh
+flutter run -d chrome -t lib/main_admin.dart \
+	--dart-define API_BASE_URL=http://localhost:8000 \
+	--dart-define PUSH_NOTIFICATIONS_ENABLED=true \
+	--dart-define FIREBASE_API_KEY=... \
+	--dart-define FIREBASE_APP_ID=... \
+	--dart-define FIREBASE_MESSAGING_SENDER_ID=... \
+	--dart-define FIREBASE_PROJECT_ID=... \
+	--dart-define FIREBASE_VAPID_KEY=...
+```
+
+Notes:
+- Foreground: Incoming messages appear as Snackbars while the tab is active.
+- Background: To show system notifications while the app is in the background, configure `web/firebase-messaging-sw.js` by uncommenting the Firebase initialization and adding your config.
+- Backend: Set `FCM_SERVER_KEY` in the backend environment to enable the admin test endpoint `/admin/api/push/send-test`.
+
+### Optional: Use a .env file
+
+If you prefer a `.env` file, use the helper script to convert it to `--dart-define` flags at runtime. Create `packages/flutter_app/.env` with lines like:
+
+```
+API_BASE_URL=http://localhost:8000
+PUSH_NOTIFICATIONS_ENABLED=true
+FIREBASE_API_KEY=...
+FIREBASE_APP_ID=...
+FIREBASE_MESSAGING_SENDER_ID=...
+FIREBASE_PROJECT_ID=...
+FIREBASE_VAPID_KEY=...
+```
+
+Then run:
+
+```zsh
+./scripts/run_with_env.zsh customer   # or: admin
+```
+
+The script reads `.env`, converts keys into `--dart-define` flags, and runs the chosen entrypoint.
+
 ## Notes
 
 - Mobile targets (iOS/Android) will be added later. The project currently contains only the web wrapper (`web/`).

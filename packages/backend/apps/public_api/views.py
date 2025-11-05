@@ -8,6 +8,8 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.notifications.models import DeviceToken
+
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
@@ -71,3 +73,44 @@ class RegisterView(APIView):
             },
         }
         return Response(data, status=status.HTTP_201_CREATED)
+
+
+class PushRegisterSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=512)
+    platform = serializers.CharField(required=False, default=DeviceToken.PLATFORM_WEB)
+    user_agent = serializers.CharField(required=False, allow_blank=True)
+
+
+class PushRegisterView(APIView):
+    """Register or update a push device token.
+
+    - If authenticated, associates the token to the current user.
+    - Idempotent on token: updates existing record with latest user/UA.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
+
+    def post(self, request):
+        serializer = PushRegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token = serializer.validated_data["token"].strip()
+        platform = serializer.validated_data["platform"]
+        ua = serializer.validated_data.get("user_agent", "")
+
+        obj, created = DeviceToken.objects.update_or_create(
+            token=token,
+            defaults={
+                "platform": platform or DeviceToken.PLATFORM_WEB,
+                "user": request.user if request.user.is_authenticated else None,
+                "user_agent": ua,
+            },
+        )
+        return Response(
+            {
+                "created": created,
+                "id": str(obj.id),
+                "platform": obj.platform,
+                "user": str(obj.user_id) if obj.user_id else None,
+            }
+        )

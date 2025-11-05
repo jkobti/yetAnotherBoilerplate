@@ -2,9 +2,27 @@
 FROM ghcr.io/cirruslabs/flutter:3.24.0 AS build
 WORKDIR /app
 COPY . .
+ARG API_BASE_URL
+ARG PUSH_NOTIFICATIONS_ENABLED
+ARG FIREBASE_API_KEY
+ARG FIREBASE_APP_ID
+ARG FIREBASE_MESSAGING_SENDER_ID
+ARG FIREBASE_PROJECT_ID
+ARG FIREBASE_VAPID_KEY
+ARG FIREBASE_AUTH_DOMAIN
+ARG FIREBASE_STORAGE_BUCKET
 RUN flutter config --enable-web && \
     flutter pub get && \
-    flutter build web -t lib/main_admin.dart --release --web-renderer canvaskit --dart-define=API_BASE_URL=${API_BASE_URL:-http://localhost:8000}
+    flutter build web -t lib/main_admin.dart --release --web-renderer canvaskit \
+      --dart-define=API_BASE_URL=${API_BASE_URL:-http://localhost:8000} \
+      --dart-define=PUSH_NOTIFICATIONS_ENABLED=${PUSH_NOTIFICATIONS_ENABLED:-false} \
+      --dart-define=FIREBASE_API_KEY=${FIREBASE_API_KEY:-} \
+      --dart-define=FIREBASE_APP_ID=${FIREBASE_APP_ID:-} \
+      --dart-define=FIREBASE_MESSAGING_SENDER_ID=${FIREBASE_MESSAGING_SENDER_ID:-} \
+      --dart-define=FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-} \
+      --dart-define=FIREBASE_VAPID_KEY=${FIREBASE_VAPID_KEY:-} \
+      --dart-define=FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN:-} \
+      --dart-define=FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET:-}
 
 FROM nginx:1.27-alpine
 COPY --from=build /app/build/web /usr/share/nginx/html
