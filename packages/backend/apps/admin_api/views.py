@@ -43,8 +43,34 @@ class PingView(APIView):
         return Response({"ok": True})
 
 
+class UsersListView(APIView):
+    """List users with their device token counts for push notification targeting."""
+
+    permission_classes = [IsAdminUser]
+    throttle_scope = "admin"
+
+    def get(self, request):
+        from django.contrib.auth import get_user_model
+        from django.db.models import Count
+
+        User = get_user_model()
+        users = (
+            User.objects.annotate(token_count=Count("devicetoken"))
+            .values(
+                "id", "email", "first_name", "last_name", "is_active", "token_count"
+            )
+            .order_by("-token_count", "email")
+        )
+        return Response({"users": list(users)})
+
+
 class SendTestPushSerializer(serializers.Serializer):
     token = serializers.CharField(required=False)
+    user_ids = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        help_text="List of user IDs to notify",
+    )
     title = serializers.CharField(required=False, default="Hello from Admin")
     body = serializers.CharField(required=False, default="This is a test push")
 
@@ -57,6 +83,7 @@ class SendTestPushView(APIView):
         serializer = SendTestPushSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         token = serializer.validated_data.get("token")
+        user_ids = serializer.validated_data.get("user_ids")
         title = serializer.validated_data.get("title")
         body = serializer.validated_data.get("body")
 
@@ -87,7 +114,20 @@ class SendTestPushView(APIView):
             # Resolve target tokens
             if token:
                 tokens = [token]
+            elif user_ids:
+                # Send to specific users
+                tokens = list(
+                    DeviceToken.objects.filter(
+                        user_id__in=user_ids, platform=DeviceToken.PLATFORM_WEB
+                    ).values_list("token", flat=True)
+                )
+                if not tokens:
+                    return Response(
+                        {"error": "No device tokens found for selected users."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             else:
+                # Default: send to last 10 tokens
                 tokens = list(
                     DeviceToken.objects.filter(platform=DeviceToken.PLATFORM_WEB)
                     .order_by("-created_at")

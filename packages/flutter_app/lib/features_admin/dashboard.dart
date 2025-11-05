@@ -20,6 +20,9 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
   bool _loading = false;
   String? _error;
   Map<String, dynamic>? _me;
+  List<Map<String, dynamic>> _users = [];
+  Set<String> _selectedUserIds = {};
+  bool _loadingUsers = false;
 
   Future<void> _checkHealth() async {
     setState(() {
@@ -45,10 +48,28 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     if (mounted) setState(() => _me = me);
   }
 
+  Future<void> _loadUsers() async {
+    setState(() => _loadingUsers = true);
+    try {
+      final response = await ApiClient.I.dio.get('/admin/api/users');
+      final users = (response.data['users'] as List).cast<Map<String, dynamic>>();
+      if (mounted) setState(() => _users = users);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load users: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingUsers = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _loadAuthAndMe();
+    _loadUsers();
   }
 
   @override
@@ -98,32 +119,95 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                   Text('Welcome, ${_me!['email']} (admin)'),
                 ],
                 const SizedBox(height: 24),
-                if (PushService.isEnabled)
+                if (PushService.isEnabled && _me != null && (_me!['is_staff'] == true))
                   Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Push notifications (admin demo)'),
+                          const Text('Push Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text('Users with tokens (${_users.where((u) => (u['token_count'] ?? 0) > 0).length})'),
+                              ),
+                              if (_loadingUsers)
+                                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              else
+                                IconButton(
+                                  icon: const Icon(Icons.refresh),
+                                  onPressed: _loadUsers,
+                                  tooltip: 'Refresh users',
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: 8),
+                          if (_users.isNotEmpty)
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              constraints: const BoxConstraints(maxHeight: 200),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: _users.length,
+                                itemBuilder: (context, index) {
+                                  final user = _users[index];
+                                  final userId = user['id'].toString();
+                                  final email = user['email'] as String;
+                                  final tokenCount = user['token_count'] as int? ?? 0;
+                                  final isActive = user['is_active'] as bool? ?? false;
+
+                                  return CheckboxListTile(
+                                    dense: true,
+                                    value: _selectedUserIds.contains(userId),
+                                    onChanged: tokenCount > 0 ? (checked) {
+                                      setState(() {
+                                        if (checked == true) {
+                                          _selectedUserIds.add(userId);
+                                        } else {
+                                          _selectedUserIds.remove(userId);
+                                        }
+                                      });
+                                    } : null,
+                                    title: Text(
+                                      email,
+                                      style: TextStyle(
+                                        color: tokenCount == 0 ? Colors.grey : null,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      '${tokenCount} token(s)${!isActive ? ' (inactive)' : ''}',
+                                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          const SizedBox(height: 16),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              OutlinedButton(
-                                onPressed: () => PushService.initializeAndRegister(context),
-                                child: const Text('Enable push on this device'),
-                              ),
-                              if (_me != null && (_me!['is_staff'] == true))
+                              if (_selectedUserIds.isNotEmpty)
                                 PrimaryButton(
                                   onPressed: () async {
                                     try {
-                                      await ApiClient.I.dio.post('/admin/api/push/send-test');
+                                      await ApiClient.I.dio.post(
+                                        '/admin/api/push/send-test',
+                                        data: {
+                                          'user_ids': _selectedUserIds.toList(),
+                                          'title': 'Hello from Admin',
+                                          'body': 'This is a targeted test notification',
+                                        },
+                                      );
                                       if (mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Sent test push to recent tokens')),
+                                          SnackBar(content: Text('Sent push to ${_selectedUserIds.length} user(s)')),
                                         );
                                       }
                                     } catch (e) {
@@ -134,12 +218,34 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                                       }
                                     }
                                   },
-                                  child: const Text('Send test push (recent tokens)'),
+                                  child: Text('Send to ${_selectedUserIds.length} selected user(s)'),
                                 ),
+                              OutlinedButton(
+                                onPressed: () async {
+                                  try {
+                                    await ApiClient.I.dio.post('/admin/api/push/send-test');
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Sent test push to recent tokens')),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Failed to send push: $e')),
+                                      );
+                                    }
+                                  }
+                                },
+                                child: const Text('Send to all recent'),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 8),
-                          const Text('Foreground messages will show as a Snackbar. Background notifications require service worker setup.'),
+                          Text(
+                            'Background notifications will appear as system notifications.',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
                         ],
                       ),
                     ),
