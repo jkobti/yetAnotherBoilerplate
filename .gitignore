@@ -7,3 +7,4 @@ wiki-stage/
 packages/backend/.env
 packages/backend/db.sqlite3
 packages/backend/yetanotherboilerplate-firebase-adminsdk-fbsvc-4684cbf143.json
+packages/flutter_app/web/env/

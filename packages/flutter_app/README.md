@@ -143,7 +143,23 @@ flutter run -d chrome -t lib/main_admin.dart \
 
 Notes:
 - Foreground: Incoming messages appear as Snackbars while the tab is active.
-- Background: To show system notifications while the app is in the background, configure `web/firebase-messaging-sw.js` by uncommenting the Firebase initialization and adding your config.
+- Background: The service worker loads Firebase config from `/env/local.json` at runtime. Before running or building, sync your env into the web root so the worker can fetch it:
+
+```zsh
+./scripts/sync_env.sh
+```
+
+This copies `env/local.json` to `web/env/local.json`. Do not commit `web/env/` (it's gitignored). Ensure your `env/local.json` includes:
+
+```
+FIREBASE_API_KEY, FIREBASE_APP_ID, FIREBASE_MESSAGING_SENDER_ID, FIREBASE_PROJECT_ID
+```
+
+Optional:
+
+```
+FIREBASE_AUTH_DOMAIN, FIREBASE_STORAGE_BUCKET
+```
 - Backend: Set `FCM_SERVER_KEY` in the backend environment to enable the admin test endpoint `/admin/api/push/send-test`.
 
 ### Optional: Use a .env file

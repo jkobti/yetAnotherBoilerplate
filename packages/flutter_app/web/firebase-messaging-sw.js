@@ -6,30 +6,47 @@
 importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging-compat.js');
 
-firebase.initializeApp({
-  apiKey: 'AIzaSyD0J3ioAIFiYXeRrfWjKZRACYG38C9tUbs',
-  appId: '1:477979509417:web:8b3ddb98a013671fad5fb8',
-  messagingSenderId: '477979509417',
-  projectId: 'yetanotherboilerplate',
-  authDomain: 'yetanotherboilerplate.firebaseapp.com',
-  storageBucket: 'yetanotherboilerplate.firebasestorage.app',
-});
+const CONFIG_URL = '/env/local.json';
 
-const messaging = firebase.messaging();
+async function initFirebaseMessaging() {
+  try {
+    const response = await fetch(CONFIG_URL, { cache: 'no-cache' });
+    if (!response.ok) {
+      throw new Error(`Failed to load ${CONFIG_URL}: ${response.status}`);
+    }
 
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+    const env = await response.json();
+    const firebaseConfig = {
+      apiKey: env.FIREBASE_API_KEY,
+      appId: env.FIREBASE_APP_ID,
+      messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
+      projectId: env.FIREBASE_PROJECT_ID,
+      authDomain: env.FIREBASE_AUTH_DOMAIN || undefined,
+      storageBucket: env.FIREBASE_STORAGE_BUCKET || undefined,
+    };
 
-  const title = (payload.notification && payload.notification.title) || 'New notification';
-  const options = {
-    body: (payload.notification && payload.notification.body) || '',
-    icon: '/icons/Icon-192.png', // Optional: add your app icon
-    badge: '/icons/Icon-192.png', // Optional: badge icon
-    data: payload.data,
-  };
+    firebase.initializeApp(firebaseConfig);
 
-  return self.registration.showNotification(title, options);
-});
+    const messaging = firebase.messaging();
+    messaging.onBackgroundMessage((payload) => {
+      console.log('[firebase-messaging-sw.js] Received background message ', payload);
+
+      const title = (payload.notification && payload.notification.title) || 'New notification';
+      const options = {
+        body: (payload.notification && payload.notification.body) || '',
+        icon: '/icons/Icon-192.png',
+        badge: '/icons/Icon-192.png',
+        data: payload.data,
+      };
+
+      return self.registration.showNotification(title, options);
+    });
+  } catch (error) {
+    console.error('[firebase-messaging-sw.js] Initialization error:', error);
+  }
+}
+
+initFirebaseMessaging();
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
