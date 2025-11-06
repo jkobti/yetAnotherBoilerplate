@@ -27,13 +27,13 @@ GoRouter customerRouter() => GoRouter(
           path: '/login',
           name: 'login',
           pageBuilder: (context, state) =>
-              const MaterialPage(child: LoginPage()),
+              const MaterialPage(child: LoginPage(redirectPath: '/app')),
         ),
         GoRoute(
           path: '/signup',
           name: 'signup',
           pageBuilder: (context, state) =>
-              const MaterialPage(child: SignupPage()),
+              const MaterialPage(child: SignupPage(redirectPath: '/app')),
         ),
       ],
     );
@@ -64,13 +64,13 @@ GoRouter adminRouter() => GoRouter(
           path: '/login',
           name: 'login',
           pageBuilder: (context, state) =>
-              const MaterialPage(child: LoginPage()),
+              const MaterialPage(child: LoginPage(redirectPath: '/')),
         ),
         GoRoute(
           path: '/signup',
           name: 'signup',
           pageBuilder: (context, state) =>
-              const MaterialPage(child: SignupPage()),
+              const MaterialPage(child: SignupPage(redirectPath: '/')),
         ),
       ],
     );

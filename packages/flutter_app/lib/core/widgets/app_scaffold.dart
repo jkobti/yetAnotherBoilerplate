@@ -29,6 +29,11 @@ class AppScaffold extends ConsumerWidget {
       appBar: AppBar(
         title: Text(title),
         actions: [
+          IconButton(
+            tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+            onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
+          ),
           // Primary nav
           if (_isWide(context)) ..._navActions(context, ref, me != null) else _navMenu(context, ref, me != null),
           if (PushService.isEnabled)
@@ -37,11 +42,6 @@ class AppScaffold extends ConsumerWidget {
               icon: const Icon(Icons.notifications_outlined),
               onPressed: () => PushService.initializeAndRegister(context),
             ),
-          IconButton(
-            tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
-          ),
         ],
       ),
       body: body,
@@ -54,16 +54,40 @@ class AppScaffold extends ConsumerWidget {
 
   List<Widget> _navActions(BuildContext context, WidgetRef ref, bool isLoggedIn) {
     if (isAdmin) {
-      return [
-        TextButton(
-          onPressed: () => context.go('/'),
-          child: const Text('Dashboard'),
-        ),
-        TextButton(
-          onPressed: () => context.go('/users'),
-          child: const Text('Users'),
-        ),
-      ];
+      if (isLoggedIn) {
+        return [
+          TextButton(
+            onPressed: () => context.go('/'),
+            child: const Text('Dashboard'),
+          ),
+          TextButton(
+            onPressed: () => context.go('/users'),
+            child: const Text('Users'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await ref.read(authStateProvider.notifier).signOut();
+              if (context.mounted) context.go('/login');
+            },
+            child: const Text('Logout'),
+          ),
+        ];
+      } else {
+        return [
+          TextButton(
+            onPressed: () => context.go('/'),
+            child: const Text('Dashboard'),
+          ),
+          TextButton(
+            onPressed: () => context.go('/users'),
+            child: const Text('Users'),
+          ),
+          TextButton(
+            onPressed: () => context.go('/login'),
+            child: const Text('Login'),
+          ),
+        ];
+      }
     }
     if (isLoggedIn) {
       return [
@@ -77,10 +101,6 @@ class AppScaffold extends ConsumerWidget {
             if (context.mounted) context.go('/');
           },
           child: const Text('Logout'),
-        ),
-        TextButton(
-          onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
-          child: const Text('Toggle theme'),
         ),
       ];
     } else {
@@ -96,10 +116,6 @@ class AppScaffold extends ConsumerWidget {
         TextButton(
           onPressed: () => context.go('/signup'),
           child: const Text('Sign up'),
-        ),
-        TextButton(
-          onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
-          child: const Text('Toggle theme'),
         ),
       ];
     }
@@ -123,11 +139,21 @@ class AppScaffold extends ConsumerWidget {
       },
       itemBuilder: (context) {
         if (isAdmin) {
-          return const [
-            PopupMenuItem(value: '/', child: Text('Dashboard')),
-            PopupMenuItem(value: '/users', child: Text('Users')),
-            PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
-          ];
+          if (isLoggedIn) {
+            return const [
+              PopupMenuItem(value: '/', child: Text('Dashboard')),
+              PopupMenuItem(value: '/users', child: Text('Users')),
+              PopupMenuItem(value: '#logout', child: Text('Logout')),
+              PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
+            ];
+          } else {
+            return const [
+              PopupMenuItem(value: '/', child: Text('Dashboard')),
+              PopupMenuItem(value: '/users', child: Text('Users')),
+              PopupMenuItem(value: '/login', child: Text('Login')),
+              PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
+            ];
+          }
         }
         if (isLoggedIn) {
           return const [

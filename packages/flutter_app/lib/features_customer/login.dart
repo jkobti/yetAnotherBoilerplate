@@ -10,7 +10,8 @@ import '../core/widgets/app_scaffold.dart';
 import '../core/auth/auth_state.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+  final String redirectPath;
+  const LoginPage({super.key, this.redirectPath = '/app'});
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -34,7 +35,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       await repo.login(email: _emailCtrl.text.trim(), password: _passCtrl.text);
       // Refresh global auth state so navbar updates immediately
       await ref.read(authStateProvider.notifier).refresh();
-      if (mounted) context.go('/app');
+      if (mounted) context.go(widget.redirectPath);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {

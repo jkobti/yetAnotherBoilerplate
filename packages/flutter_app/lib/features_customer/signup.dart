@@ -10,7 +10,8 @@ import '../core/widgets/app_scaffold.dart';
 import '../core/auth/auth_state.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
-  const SignupPage({super.key});
+  final String redirectPath;
+  const SignupPage({super.key, this.redirectPath = '/app'});
 
   @override
   ConsumerState<SignupPage> createState() => _SignupPageState();
@@ -42,7 +43,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       );
       // Refresh global auth state so navbar updates immediately
       await ref.read(authStateProvider.notifier).refresh();
-      if (mounted) context.go('/app');
+      if (mounted) context.go(widget.redirectPath);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
