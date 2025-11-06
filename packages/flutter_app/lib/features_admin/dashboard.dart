@@ -117,6 +117,18 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                   const Text('You are signed in but not an admin.'),
                 ] else ...[
                   Text('Welcome, ${_me!['email']} (admin)'),
+                  const SizedBox(height: 16),
+                  PrimaryButton(
+                    onPressed: () => context.go('/users'),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.people, size: 20),
+                        SizedBox(width: 8),
+                        Text('User Management'),
+                      ],
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 24),
                 if (PushService.isEnabled && _me != null && (_me!['is_staff'] == true))

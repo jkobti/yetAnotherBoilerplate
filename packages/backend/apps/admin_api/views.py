@@ -54,13 +54,32 @@ class UsersListView(APIView):
         from django.db.models import Count
 
         User = get_user_model()
-        users = (
-            User.objects.annotate(token_count=Count("devicetoken"))
-            .values(
-                "id", "email", "first_name", "last_name", "is_active", "token_count"
-            )
-            .order_by("-token_count", "email")
-        )
+        queryset = User.objects.annotate(token_count=Count("devicetoken"))
+
+        # Apply filters
+        email_filter = request.query_params.get("email")
+        if email_filter:
+            queryset = queryset.filter(email__icontains=email_filter)
+
+        is_active_filter = request.query_params.get("is_active")
+        if is_active_filter is not None:
+            queryset = queryset.filter(is_active=is_active_filter.lower() == "true")
+
+        is_staff_filter = request.query_params.get("is_staff")
+        if is_staff_filter is not None:
+            queryset = queryset.filter(is_staff=is_staff_filter.lower() == "true")
+
+        users = queryset.values(
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "is_active",
+            "is_staff",
+            "date_joined",
+            "token_count",
+        ).order_by("-date_joined", "email")
+
         return Response({"users": list(users)})
 
 
@@ -214,3 +233,39 @@ class SendTestPushView(APIView):
         )
 
         return Response({"sent": True, "targets": targets, "result": result})
+
+
+class UserDetailView(APIView):
+    """Get a single user's details."""
+
+    permission_classes = [IsAdminUser]
+    throttle_scope = "admin"
+
+    def get(self, request, user_id):
+        from django.contrib.auth import get_user_model
+        from django.db.models import Count
+        from rest_framework.exceptions import NotFound
+
+        User = get_user_model()
+        try:
+            user = (
+                User.objects.filter(id=user_id)
+                .annotate(token_count=Count("devicetoken"))
+                .values(
+                    "id",
+                    "email",
+                    "first_name",
+                    "last_name",
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "date_joined",
+                    "last_login",
+                    "token_count",
+                )
+                .get()
+            )
+        except User.DoesNotExist:
+            raise NotFound("User not found") from None
+
+        return Response(user)

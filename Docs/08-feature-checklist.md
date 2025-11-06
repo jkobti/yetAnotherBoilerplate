@@ -8,7 +8,7 @@ This document tracks the implementation status of all features across the yetAno
 - ⬜ = Not yet implemented
 - 🚧 = Partially implemented / In progress
 
-**Last Updated:** November 5, 2025
+**Last Updated:** December 2025
 
 ---
 
@@ -55,14 +55,15 @@ This document tracks the implementation status of all features across the yetAno
 
 ### API Endpoints (Admin)
 - [x] ✅ `/admin/api/ping` - Admin health check
-- [x] ✅ `/admin/api/users/` - List users with device token counts
+- [x] ✅ `/admin/api/users/` - List users with device token counts (with filtering)
+- [x] ✅ `/admin/api/users/<uuid:user_id>` - Get user details
 - [x] ✅ `/admin/api/push/test/` - Send test push notification
 - [x] ✅ Admin throttling configured (`admin` scope)
 - [ ] ⬜ Admin audit logging
 - [ ] ⬜ Metrics/statistics endpoints
 - [ ] ⬜ Feature flag management endpoints
 - [ ] ⬜ Job control endpoints
-- [ ] ⬜ User management endpoints (CRUD)
+- [ ] ⬜ User management endpoints (CRUD - create/update/delete)
 - [ ] ⬜ Organization admin endpoints
 
 ### Middleware & Security
@@ -168,9 +169,9 @@ This document tracks the implementation status of all features across the yetAno
 - [ ] ⬜ Admin route guards
 
 ### Admin Features
-- [ ] ⬜ User management interface
-- [ ] ⬜ User list with filters
-- [ ] ⬜ User detail view
+- [x] ✅ User management interface
+- [x] ✅ User list with filters
+- [x] ✅ User detail view
 - [ ] ⬜ Operational statistics dashboard
 - [ ] ⬜ Business metrics dashboard
 - [ ] ⬜ Feature toggle management UI
@@ -365,7 +366,7 @@ This document tracks the implementation status of all features across the yetAno
 
 ## Notes
 
-- This checklist reflects the current state as of November 5, 2025
+- This checklist reflects the current state as of December 2025
 - Features marked with ⚙️ are optional and can be enabled based on project needs
 - Update this document as features are completed or new features are identified
 - For detailed implementation guidance, refer to the specific documentation files referenced in each section

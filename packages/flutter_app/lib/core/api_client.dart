@@ -100,4 +100,34 @@ class ApiClient {
       if (userAgent != null) 'user_agent': userAgent,
     });
   }
+
+  /// Get list of users with optional filters
+  Future<List<Map<String, dynamic>>> getUsers({
+    String? email,
+    bool? isActive,
+    bool? isStaff,
+  }) async {
+    final queryParams = <String, dynamic>{};
+    if (email != null && email.isNotEmpty) {
+      queryParams['email'] = email;
+    }
+    if (isActive != null) {
+      queryParams['is_active'] = isActive;
+    }
+    if (isStaff != null) {
+      queryParams['is_staff'] = isStaff;
+    }
+
+    final resp = await _dio.get(
+      '/admin/api/users',
+      queryParameters: queryParams.isEmpty ? null : queryParams,
+    );
+    return (resp.data['users'] as List).cast<Map<String, dynamic>>();
+  }
+
+  /// Get a single user by ID
+  Future<Map<String, dynamic>> getUser(String userId) async {
+    final resp = await _dio.get('/admin/api/users/$userId');
+    return (resp.data as Map).cast<String, dynamic>();
+  }
 }
