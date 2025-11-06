@@ -5,6 +5,7 @@ import '../features_admin/dashboard.dart';
 import '../features_admin/user_detail.dart';
 import '../features_admin/users_list.dart';
 import '../features_customer/home.dart';
+import '../features_customer/landing.dart';
 import '../features_customer/login.dart';
 import '../features_customer/signup.dart';
 
@@ -12,6 +13,12 @@ GoRouter customerRouter() => GoRouter(
       routes: [
         GoRoute(
           path: '/',
+          name: 'landing',
+          pageBuilder: (context, state) =>
+              const MaterialPage(child: LandingPage()),
+        ),
+        GoRoute(
+          path: '/app',
           name: 'home',
           pageBuilder: (context, state) =>
               const MaterialPage(child: HomePage()),

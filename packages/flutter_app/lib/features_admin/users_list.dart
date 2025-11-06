@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import '../core/api_client.dart';
+import '../core/widgets/app_scaffold.dart';
 
 class UsersListPage extends ConsumerStatefulWidget {
   const UsersListPage({super.key});
@@ -81,17 +82,9 @@ class _UsersListPageState extends ConsumerState<UsersListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Management'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadUsers,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
+    return AppScaffold(
+      title: 'User Management',
+      isAdmin: true,
       body: Column(
         children: [
           // Filters section

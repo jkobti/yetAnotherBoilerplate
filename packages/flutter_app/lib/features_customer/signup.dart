@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/auth/auth_repository.dart';
 import '../core/api_client.dart';
 import '../core/auth/token_storage.dart';
+import '../core/widgets/app_scaffold.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
@@ -38,7 +39,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             _firstCtrl.text.trim().isEmpty ? null : _firstCtrl.text.trim(),
         lastName: _lastCtrl.text.trim().isEmpty ? null : _lastCtrl.text.trim(),
       );
-      if (mounted) context.go('/');
+      if (mounted) context.go('/app');
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -48,8 +49,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Sign up')),
+    return AppScaffold(
+      title: 'Sign up',
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),

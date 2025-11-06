@@ -7,6 +7,7 @@ import '../core/api_client.dart';
 import '../core/auth/auth_repository.dart';
 import '../core/auth/token_storage.dart';
 import '../core/push/push_service.dart';
+import '../core/widgets/app_scaffold.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -63,8 +64,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Customer App')),
+    return AppScaffold(
+      title: 'Customer App',
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),

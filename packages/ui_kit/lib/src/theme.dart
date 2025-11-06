@@ -5,11 +5,15 @@ class YabTheme {
 
   static ThemeData customer() => _base(seed: const Color(0xFF0066FF));
   static ThemeData admin() => _base(seed: const Color(0xFF0E7C66));
+  static ThemeData customerDark() =>
+      _base(seed: const Color(0xFF0066FF), brightness: Brightness.dark);
+  static ThemeData adminDark() =>
+      _base(seed: const Color(0xFF0E7C66), brightness: Brightness.dark);
 
   static const spacing = _Spacing();
 
-  static ThemeData _base({required Color seed}) {
-    final scheme = ColorScheme.fromSeed(seedColor: seed);
+  static ThemeData _base({required Color seed, Brightness brightness = Brightness.light}) {
+    final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
     return ThemeData(
       colorScheme: scheme,
       useMaterial3: true,

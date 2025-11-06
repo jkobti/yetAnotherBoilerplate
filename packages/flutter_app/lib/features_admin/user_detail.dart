@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import '../core/api_client.dart';
+import '../core/widgets/app_scaffold.dart';
 
 class UserDetailPage extends ConsumerStatefulWidget {
   final String userId;
@@ -55,17 +56,9 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Details'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadUser,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
+    return AppScaffold(
+      title: 'User Details',
+      isAdmin: true,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

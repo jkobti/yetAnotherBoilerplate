@@ -7,6 +7,7 @@ import '../core/api_client.dart';
 import '../core/auth/auth_repository.dart';
 import '../core/auth/token_storage.dart';
 import '../core/push/push_service.dart';
+import '../core/widgets/app_scaffold.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
   const AdminDashboardPage({super.key});
@@ -74,8 +75,9 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Admin Portal')),
+    return AppScaffold(
+      title: 'Admin Portal',
+      isAdmin: true,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
