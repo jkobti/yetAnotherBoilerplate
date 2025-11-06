@@ -27,7 +27,7 @@ class AppScaffold extends ConsumerWidget {
         title: Text(title),
         actions: [
           // Primary nav
-          if (_isWide(context)) ..._navActions(context) else _navMenu(context),
+          if (_isWide(context)) ..._navActions(context, ref) else _navMenu(context, ref),
           if (PushService.isEnabled)
             IconButton(
               tooltip: 'Enable notifications',
@@ -49,7 +49,7 @@ class AppScaffold extends ConsumerWidget {
     return MediaQuery.of(context).size.width >= 720;
   }
 
-  List<Widget> _navActions(BuildContext context) {
+  List<Widget> _navActions(BuildContext context, WidgetRef ref) {
     if (isAdmin) {
       return [
         TextButton(
@@ -64,7 +64,7 @@ class AppScaffold extends ConsumerWidget {
     }
     return [
       TextButton(
-        onPressed: () => context.go('/'),
+        onPressed: () => context.go('/app'),
         child: const Text('Home'),
       ),
       TextButton(
@@ -75,13 +75,21 @@ class AppScaffold extends ConsumerWidget {
         onPressed: () => context.go('/signup'),
         child: const Text('Sign up'),
       ),
+      TextButton(
+        onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
+        child: const Text('Toggle theme'),
+      ),
     ];
   }
 
-  Widget _navMenu(BuildContext context) {
+  Widget _navMenu(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<String>(
       tooltip: 'Menu',
       onSelected: (value) {
+        if (value == '#toggle-theme') {
+          ref.read(themeModeProvider.notifier).toggle();
+          return;
+        }
         context.go(value);
       },
       itemBuilder: (context) {
@@ -89,12 +97,14 @@ class AppScaffold extends ConsumerWidget {
           return const [
             PopupMenuItem(value: '/', child: Text('Dashboard')),
             PopupMenuItem(value: '/users', child: Text('Users')),
+            PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
           ];
         }
         return const [
-          PopupMenuItem(value: '/', child: Text('Home')),
+          PopupMenuItem(value: '/app', child: Text('Home')),
           PopupMenuItem(value: '/login', child: Text('Login')),
           PopupMenuItem(value: '/signup', child: Text('Sign up')),
+          PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
         ];
       },
     );
