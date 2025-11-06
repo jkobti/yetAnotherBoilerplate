@@ -35,7 +35,7 @@ class AppScaffold extends ConsumerWidget {
             onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
           ),
           // Primary nav
-          if (_isWide(context)) ..._navActions(context, ref, me != null) else _navMenu(context, ref, me != null),
+          if (_isWide(context)) ..._navActions(context, ref, me) else _navMenu(context, ref, me),
           if (PushService.isEnabled)
             IconButton(
               tooltip: 'Enable notifications',
@@ -52,18 +52,21 @@ class AppScaffold extends ConsumerWidget {
     return MediaQuery.of(context).size.width >= 720;
   }
 
-  List<Widget> _navActions(BuildContext context, WidgetRef ref, bool isLoggedIn) {
+  List<Widget> _navActions(BuildContext context, WidgetRef ref, Map<String, dynamic>? me) {
+    final isLoggedIn = me != null;
     if (isAdmin) {
+      final isStaff = (me?['is_staff'] == true);
       if (isLoggedIn) {
         return [
           TextButton(
             onPressed: () => context.go('/'),
             child: const Text('Dashboard'),
           ),
-          TextButton(
-            onPressed: () => context.go('/users'),
-            child: const Text('Users'),
-          ),
+          if (isStaff)
+            TextButton(
+              onPressed: () => context.go('/users'),
+              child: const Text('Users'),
+            ),
           TextButton(
             onPressed: () async {
               await ref.read(authStateProvider.notifier).signOut();
@@ -121,7 +124,7 @@ class AppScaffold extends ConsumerWidget {
     }
   }
 
-  Widget _navMenu(BuildContext context, WidgetRef ref, bool isLoggedIn) {
+  Widget _navMenu(BuildContext context, WidgetRef ref, Map<String, dynamic>? me) {
     return PopupMenuButton<String>(
       tooltip: 'Menu',
       onSelected: (value) {
@@ -138,18 +141,20 @@ class AppScaffold extends ConsumerWidget {
         context.go(value);
       },
       itemBuilder: (context) {
+        final isLoggedIn = me != null;
         if (isAdmin) {
+          final isStaff = (me?['is_staff'] == true);
           if (isLoggedIn) {
-            return const [
-              PopupMenuItem(value: '/', child: Text('Dashboard')),
-              PopupMenuItem(value: '/users', child: Text('Users')),
-              PopupMenuItem(value: '#logout', child: Text('Logout')),
-              PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
+            final items = <PopupMenuEntry<String>>[
+              const PopupMenuItem(value: '/', child: Text('Dashboard')),
+              if (isStaff) const PopupMenuItem(value: '/users', child: Text('Users')),
+              const PopupMenuItem(value: '#logout', child: Text('Logout')),
+              const PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
             ];
+            return items;
           } else {
             return const [
               PopupMenuItem(value: '/', child: Text('Dashboard')),
-              PopupMenuItem(value: '/users', child: Text('Users')),
               PopupMenuItem(value: '/login', child: Text('Login')),
               PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
             ];

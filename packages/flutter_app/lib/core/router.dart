@@ -64,13 +64,13 @@ GoRouter adminRouter() => GoRouter(
           path: '/login',
           name: 'login',
           pageBuilder: (context, state) =>
-              const MaterialPage(child: LoginPage(redirectPath: '/')),
+              const MaterialPage(child: LoginPage(redirectPath: '/', isAdmin: true)),
         ),
         GoRoute(
           path: '/signup',
           name: 'signup',
           pageBuilder: (context, state) =>
-              const MaterialPage(child: SignupPage(redirectPath: '/')),
+              const MaterialPage(child: SignupPage(redirectPath: '/', isAdmin: true)),
         ),
       ],
     );

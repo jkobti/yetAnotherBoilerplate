@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/widgets/app_scaffold.dart';
-import '../core/api_client.dart';
-import '../core/auth/auth_repository.dart';
-import '../core/auth/token_storage.dart';
+import '../core/auth/auth_state.dart';
 
 class LandingPage extends ConsumerStatefulWidget {
   const LandingPage({super.key});
@@ -15,23 +13,13 @@ class LandingPage extends ConsumerStatefulWidget {
 
 class _LandingPageState extends ConsumerState<LandingPage> {
   @override
-  void initState() {
-    super.initState();
-    _maybeRedirect();
-  }
-
-  Future<void> _maybeRedirect() async {
-    final repo = AuthRepository(ApiClient.I, TokenStorage());
-    await repo.init();
-    final me = await repo.me();
-    if (!mounted) return;
-    if (me != null) {
-      context.go('/app');
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final me = ref.watch(authStateProvider).valueOrNull;
+    if (me != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/app');
+      });
+    }
     return AppScaffold(
       title: 'Boilerplate',
       body: Center(

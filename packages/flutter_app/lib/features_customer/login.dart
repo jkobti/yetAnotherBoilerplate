@@ -11,7 +11,8 @@ import '../core/auth/auth_state.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   final String redirectPath;
-  const LoginPage({super.key, this.redirectPath = '/app'});
+  final bool isAdmin;
+  const LoginPage({super.key, this.redirectPath = '/app', this.isAdmin = false});
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -47,6 +48,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Login',
+      isAdmin: widget.isAdmin,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
