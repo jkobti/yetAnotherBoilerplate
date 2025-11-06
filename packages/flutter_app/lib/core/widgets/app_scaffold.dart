@@ -78,14 +78,6 @@ class AppScaffold extends ConsumerWidget {
       } else {
         return [
           TextButton(
-            onPressed: () => context.go('/'),
-            child: const Text('Dashboard'),
-          ),
-          TextButton(
-            onPressed: () => context.go('/users'),
-            child: const Text('Users'),
-          ),
-          TextButton(
             onPressed: () => context.go('/login'),
             child: const Text('Login'),
           ),
@@ -154,7 +146,6 @@ class AppScaffold extends ConsumerWidget {
             return items;
           } else {
             return const [
-              PopupMenuItem(value: '/', child: Text('Dashboard')),
               PopupMenuItem(value: '/login', child: Text('Login')),
               PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
             ];
