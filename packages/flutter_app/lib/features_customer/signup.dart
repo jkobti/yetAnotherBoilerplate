@@ -7,6 +7,7 @@ import '../core/auth/auth_repository.dart';
 import '../core/api_client.dart';
 import '../core/auth/token_storage.dart';
 import '../core/widgets/app_scaffold.dart';
+import '../core/auth/auth_state.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
@@ -39,6 +40,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             _firstCtrl.text.trim().isEmpty ? null : _firstCtrl.text.trim(),
         lastName: _lastCtrl.text.trim().isEmpty ? null : _lastCtrl.text.trim(),
       );
+      // Refresh global auth state so navbar updates immediately
+      await ref.read(authStateProvider.notifier).refresh();
       if (mounted) context.go('/app');
     } catch (e) {
       setState(() => _error = e.toString());

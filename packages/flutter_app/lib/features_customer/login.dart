@@ -7,6 +7,7 @@ import '../core/auth/auth_repository.dart';
 import '../core/api_client.dart';
 import '../core/auth/token_storage.dart';
 import '../core/widgets/app_scaffold.dart';
+import '../core/auth/auth_state.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -31,6 +32,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final repo = AuthRepository(ApiClient.I, TokenStorage());
     try {
       await repo.login(email: _emailCtrl.text.trim(), password: _passCtrl.text);
+      // Refresh global auth state so navbar updates immediately
+      await ref.read(authStateProvider.notifier).refresh();
       if (mounted) context.go('/app');
     } catch (e) {
       setState(() => _error = e.toString());

@@ -8,6 +8,7 @@ import '../core/auth/auth_repository.dart';
 import '../core/auth/token_storage.dart';
 import '../core/push/push_service.dart';
 import '../core/widgets/app_scaffold.dart';
+import '../core/auth/auth_state.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -51,8 +52,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _logout() async {
-    final repo = AuthRepository(ApiClient.I, TokenStorage());
-    await repo.logout();
+    await ref.read(authStateProvider.notifier).signOut();
     if (mounted) setState(() => _me = null);
   }
 
