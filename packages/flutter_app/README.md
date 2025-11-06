@@ -95,72 +95,58 @@ The file format is simple JSON key/value pairs. See `env/local.json.example`.
 
 This project includes a minimal FCM Web Push demo behind a feature flag. Foreground messages are handled inside the app; background notifications require configuring the service worker.
 
-Enable with the following defines (replace with your Firebase Web App config):
+**Recommended approach (build-time injection):**
 
-```
---dart-define PUSH_NOTIFICATIONS_ENABLED=true \
---dart-define FIREBASE_API_KEY=... \
---dart-define FIREBASE_APP_ID=... \
---dart-define FIREBASE_MESSAGING_SENDER_ID=... \
---dart-define FIREBASE_PROJECT_ID=... \
---dart-define FIREBASE_VAPID_KEY=...
+This approach embeds the Firebase config directly in the service worker at build time, avoiding the need to expose a separate JSON file.
+
+1. Add Firebase config to `env/local.json`:
+
+```json
+{
+  "API_BASE_URL": "http://localhost:8000",
+  "PUSH_NOTIFICATIONS_ENABLED": "true",
+  "FIREBASE_API_KEY": "your-api-key",
+  "FIREBASE_APP_ID": "your-app-id",
+  "FIREBASE_MESSAGING_SENDER_ID": "your-sender-id",
+  "FIREBASE_PROJECT_ID": "your-project-id",
+  "FIREBASE_VAPID_KEY": "your-vapid-key",
+  "FIREBASE_AUTH_DOMAIN": "your-project.firebaseapp.com",
+  "FIREBASE_STORAGE_BUCKET": "your-project.appspot.com"
+}
 ```
 
-Optional:
-
-```
---dart-define FIREBASE_AUTH_DOMAIN=... \
---dart-define FIREBASE_STORAGE_BUCKET=...
-```
-
-Run (customer):
+2. Inject the config into the service worker before running:
 
 ```zsh
-flutter run -d chrome -t lib/main.dart \
-	--dart-define API_BASE_URL=http://localhost:8000 \
-	--dart-define PUSH_NOTIFICATIONS_ENABLED=true \
-	--dart-define FIREBASE_API_KEY=... \
-	--dart-define FIREBASE_APP_ID=... \
-	--dart-define FIREBASE_MESSAGING_SENDER_ID=... \
-	--dart-define FIREBASE_PROJECT_ID=... \
-	--dart-define FIREBASE_VAPID_KEY=...
+./scripts/inject_firebase_config.sh
 ```
 
-Or, add these values into `env/local.json` and run with `--dart-define-from-file=env/local.json` as shown above.
-
-Run (admin):
+3. Run the app:
 
 ```zsh
-flutter run -d chrome -t lib/main_admin.dart \
-	--dart-define API_BASE_URL=http://localhost:8000 \
-	--dart-define PUSH_NOTIFICATIONS_ENABLED=true \
-	--dart-define FIREBASE_API_KEY=... \
-	--dart-define FIREBASE_APP_ID=... \
-	--dart-define FIREBASE_MESSAGING_SENDER_ID=... \
-	--dart-define FIREBASE_PROJECT_ID=... \
-	--dart-define FIREBASE_VAPID_KEY=...
+flutter run -d chrome -t lib/main.dart --dart-define-from-file=env/local.json
 ```
 
-Notes:
+**Alternative approach (runtime fetch - less secure):**
+
+The old approach fetches config from `/env/local.json` at runtime. This exposes a separate JSON endpoint that's easy to discover. If you prefer this approach:
+
+```zsh
+./scripts/sync_env.sh  # Copies env/local.json to web/env/local.json
+flutter run -d chrome -t lib/main.dart --dart-define-from-file=env/local.json
+```
+
+**Security note:**
+
+Firebase Web App config values (API Key, App ID, etc.) are **client-side credentials** that are exposed in the browser anyway - they're not secret. However, the build-time injection approach is preferred because:
+- It doesn't create a separate `/env/local.json` endpoint that's easy to discover
+- The config is embedded in the service worker file itself
+- The service worker is still publicly accessible, but it's less obvious than a dedicated config endpoint
+
+**Notes:**
 - Foreground: Incoming messages appear as Snackbars while the tab is active.
-- Background: The service worker loads Firebase config from `/env/local.json` at runtime. Before running or building, sync your env into the web root so the worker can fetch it:
-
-```zsh
-./scripts/sync_env.sh
-```
-
-This copies `env/local.json` to `web/env/local.json`. Do not commit `web/env/` (it's gitignored). Ensure your `env/local.json` includes:
-
-```
-FIREBASE_API_KEY, FIREBASE_APP_ID, FIREBASE_MESSAGING_SENDER_ID, FIREBASE_PROJECT_ID
-```
-
-Optional:
-
-```
-FIREBASE_AUTH_DOMAIN, FIREBASE_STORAGE_BUCKET
-```
-- Backend: Set `FCM_SERVER_KEY` in the backend environment to enable the admin test endpoint `/admin/api/push/send-test`.
+- Background: The service worker handles notifications when the app is not in focus.
+- Backend: Set `GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_SERVICE_ACCOUNT_JSON` in the backend environment to enable the admin test endpoint `/admin/api/push/send-test`.
 
 ### Optional: Use a .env file
 

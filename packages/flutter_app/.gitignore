@@ -27,3 +27,6 @@ web/.dart_tool/
 # Local env/config
 .env
 env/local.json
+
+# Generated service worker (contains Firebase config)
+web/firebase-messaging-sw.js
