@@ -128,13 +128,10 @@ def verify_magic_link(raw_token: str) -> User | None:
     )
     if not ml:
         return None
-    # Mark used
-    ml.used_at = now
-    ml.save(update_fields=["used_at"])
+    # Resolve user (create lazily if needed) BEFORE deleting record
     user = ml.user
     if not user:
-        # Create user on demand
         user = User.objects.create_user(email=ml.email, password=None)
-        ml.user = user
-        ml.save(update_fields=["user"])
+    # Hard delete for single-use cleanup (reduces table size, removes hash)
+    ml.delete()
     return user

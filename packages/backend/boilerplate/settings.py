@@ -22,7 +22,8 @@ env = environ.Env(
     # to a page that already ends with /magic-verify it will just add ?token=.
     # It MUST start with http:// or https://. Empty value will raise at runtime when sending a magic link.
     MAGIC_LINK_VERIFY_URL=(str, ""),
-    MAGIC_LINK_EXPIRY_MINUTES=(int, 15),
+    # Shorter default (5 minutes) reduces window for brute force on 8-digit codes.
+    MAGIC_LINK_EXPIRY_MINUTES=(int, 5),
     MAGIC_LINK_DEBUG_ECHO_TOKEN=(
         bool,
         True,
