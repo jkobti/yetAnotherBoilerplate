@@ -60,3 +60,41 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:  # pragma: no cover - trivial
         return self.email
+
+
+class MagicLink(models.Model):
+    """Stores single-use magic link tokens (hashed) for passwordless auth.
+
+    A record is created whenever a user requests a magic link:
+    - If a user already exists for the email, it is linked; otherwise a new user
+      with an unusable password can be created at verification time.
+    - Tokens are stored as SHA256 hashes (never plaintext) and are single-use.
+    - Expired or used tokens are rejected during verification.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(db_index=True)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="magic_links",
+    )
+    token_hash = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    ip_address = models.CharField(max_length=45, blank=True)
+    user_agent = models.TextField(blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["email"]),
+            models.Index(fields=["expires_at"]),
+        ]
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:  # pragma: no cover - representation only
+        status = "used" if self.used_at else "pending"
+        return f"MagicLink<{self.email}:{status}>"

@@ -377,6 +377,44 @@ Example endpoint categories (illustrative):
 
 Document and version admin endpoints alongside the public API, but host them under a separate URL namespace to simplify firewalling and routing.
 
+### Magic Link Authentication (Passwordless Email Code)
+
+The API supports passwordless login/sign-up via a short 8-digit code delivered by email. A code is generated, stored hashed, emailed to the user, and then verified to issue JWT tokens. The email also contains a direct link to the frontend verify page with `?token=...` appended for convenience, plus the raw code for manual entry.
+
+Endpoints:
+- `POST /api/auth/magic/request/` body: `{"email": "user@example.com"}` → `202 Accepted` (may include `debug_token` when `DEBUG` and `MAGIC_LINK_DEBUG_ECHO_TOKEN` are enabled)
+- `POST /api/auth/magic/verify/` body: `{"token": "12345678"}` → `200 OK` with `{ access, refresh, user }` or `400 {"error": "invalid_or_expired"}`
+
+Environment Variables:
+- `MAGIC_LINK_VERIFY_URL` (REQUIRED outside isolated unit tests) Absolute frontend origin or full verify page URL. Must start with `http://` or `https://`.
+    - Ends with `/magic-verify` → backend appends `?token=...`
+    - Base origin only (`https://app.example.com`) → backend appends `/magic-verify?token=...`
+    - Missing or non-HTTP(S) value raises `RuntimeError` when sending email.
+- `MAGIC_LINK_EXPIRY_MINUTES` (default 15) Code lifespan.
+- `MAGIC_LINK_DEBUG_ECHO_TOKEN` (DEV ONLY) Echo raw code in API response when requesting; never enable in prod.
+
+Operational Notes:
+1. Codes single-use; reuse fails with `invalid_or_expired`.
+2. Codes hashed (SHA256) at rest.
+3. Email provider via Django-Anymail; `EMAIL_PROVIDER=console` prints emails to stdout only.
+4. Tests must set `settings.MAGIC_LINK_VERIFY_URL` due to enforcement.
+
+Troubleshooting:
+- RuntimeError complaining about unset verify URL → Set `MAGIC_LINK_VERIFY_URL` (e.g. `http://localhost:5173`).
+- Seeing `x-webdoc://` or other odd scheme → Artifact of copying from a local preview/console backend; proper absolute URL removes fallback so this no longer occurs.
+- No email delivered while on console provider → Switch to `EMAIL_PROVIDER=resend` and set `RESEND_API_KEY`.
+- Manual verification needed → User enters 8-digit code directly on verify page.
+
+Security:
+- Short expiry (≤15 minutes) recommended.
+- Disable debug echo outside local.
+- Add a DRF scoped throttle (e.g. `magic`) to mitigate brute-force; plan for future rate config (e.g. `REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['magic'] = '5/min'`).
+
+Future Enhancements:
+- Cleanup cron/command for expired codes.
+- HTML branded email template.
+- Track last successful magic code login timestamp.
+
 ## 8. References
 
 - [Django Documentation](https://docs.djangoproject.com/)

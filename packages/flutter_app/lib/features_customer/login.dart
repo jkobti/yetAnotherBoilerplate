@@ -12,7 +12,8 @@ import '../core/auth/auth_state.dart';
 class LoginPage extends ConsumerStatefulWidget {
   final String redirectPath;
   final bool isAdmin;
-  const LoginPage({super.key, this.redirectPath = '/app', this.isAdmin = false});
+  const LoginPage(
+      {super.key, this.redirectPath = '/app', this.isAdmin = false});
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -88,6 +89,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         : const Text('Sign in'),
                   ),
                   const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => context.go('/login-magic'),
+                    child: const Text('Use magic link instead'),
+                  ),
+                  const SizedBox(height: 4),
                   TextButton(
                     onPressed: () => context.go('/signup'),
                     child: const Text('Create an account'),
