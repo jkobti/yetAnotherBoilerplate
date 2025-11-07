@@ -14,6 +14,20 @@ env = environ.Env(
     FCM_SERVER_KEY=(str, ""),
     GOOGLE_APPLICATION_CREDENTIALS=(str, ""),  # path to service account JSON (HTTP v1)
     GOOGLE_SERVICE_ACCOUNT_JSON=(str, ""),  # alternatively, raw JSON string
+    # Magic link auth settings
+    RESEND_API_KEY=(str, ""),
+    # IMPORTANT: MAGIC_LINK_VERIFY_URL MUST be an absolute URL to the frontend route that handles verification.
+    # Example: https://app.example.com or https://app.example.com/auth
+    # The code will append /magic-verify?token=... if you supply only the base. If you point directly
+    # to a page that already ends with /magic-verify it will just add ?token=.
+    # It MUST start with http:// or https://. Empty value will raise at runtime when sending a magic link.
+    MAGIC_LINK_VERIFY_URL=(str, ""),
+    # Shorter default (5 minutes) reduces window for brute force on 8-digit codes.
+    MAGIC_LINK_EXPIRY_MINUTES=(int, 5),
+    MAGIC_LINK_DEBUG_ECHO_TOKEN=(
+        bool,
+        True,
+    ),  # include raw token in response when DEBUG
 )
 # Load .env if present at project root (packages/backend/.env)
 env_file = BASE_DIR / ".env"
@@ -190,8 +204,8 @@ _EMAIL_BACKENDS = {
     "mailgun": "anymail.backends.mailgun.EmailBackend",
     "postmark": "anymail.backends.postmark.EmailBackend",
     "sendgrid": "anymail.backends.sendgrid.EmailBackend",
-    # Resend is not natively supported by django-anymail; use SMTP fallback
-    "resend": "django.core.mail.backends.smtp.EmailBackend",
+    # Resend supported via anymail since v10.2
+    "resend": "anymail.backends.resend.EmailBackend",
 }
 
 EMAIL_BACKEND = _EMAIL_BACKENDS.get(EMAIL_PROVIDER, _EMAIL_BACKENDS["console"])
@@ -217,12 +231,22 @@ elif EMAIL_PROVIDER == "sendgrid":
         }
     )
 elif EMAIL_PROVIDER == "resend":
-    # Use SMTP settings for Resend (or another provider offering SMTP relay)
-    EMAIL_HOST = env("EMAIL_HOST", default="")
-    EMAIL_PORT = env("EMAIL_PORT", default=587)
-    EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
-    EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-    EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True)
+    # Anymail Resend backend settings
+    ANYMAIL.update(
+        {
+            "RESEND_API_KEY": env("RESEND_API_KEY", default=""),
+            # Optional: provide signing secret if using webhooks
+            "RESEND_SIGNING_SECRET": env(
+                "RESEND_SIGNING_SECRET", default=""
+            ),  # leave blank if unused
+        }
+    )
+
+# Magic Link settings (plain values; logic in apps.users.magic_link)
+RESEND_API_KEY = env("RESEND_API_KEY")
+MAGIC_LINK_VERIFY_URL = env("MAGIC_LINK_VERIFY_URL")
+MAGIC_LINK_EXPIRY_MINUTES = env("MAGIC_LINK_EXPIRY_MINUTES")
+MAGIC_LINK_DEBUG_ECHO_TOKEN = env("MAGIC_LINK_DEBUG_ECHO_TOKEN")
 
 # (Idempotency middleware already included above in correct order)
 

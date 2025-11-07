@@ -56,4 +56,16 @@ class AuthRepository {
     await _storage.saveTokens(access: access, refresh: refresh);
     _client.setAuthToken(access);
   }
+
+  /// Complete authentication using magic link verification response payload.
+  /// Expects backend to have already issued access & refresh tokens.
+  Future<void> finishMagicLink(Map<String, dynamic> data) async {
+    final access = data['access'] as String?;
+    final refresh = data['refresh'] as String?;
+    if (access == null) {
+      throw Exception('Invalid magic link response');
+    }
+    await _storage.saveTokens(access: access, refresh: refresh);
+    _client.setAuthToken(access);
+  }
 }

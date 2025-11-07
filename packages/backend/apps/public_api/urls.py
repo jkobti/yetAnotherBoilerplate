@@ -5,7 +5,13 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from .views import MeView, PushRegisterView, RegisterView
+from .views import (
+    MagicLinkRequestView,
+    MagicLinkVerifyView,
+    MeView,
+    PushRegisterView,
+    RegisterView,
+)
 
 app_name = "public_api"
 
@@ -13,6 +19,9 @@ urlpatterns = [
     path("v1/me", MeView.as_view(), name="me"),
     path("auth/register/", RegisterView.as_view(), name="register"),
     path("push/register/", PushRegisterView.as_view(), name="push-register"),
+    # Magic link passwordless auth
+    path("auth/magic/request/", MagicLinkRequestView.as_view(), name="magic-request"),
+    path("auth/magic/verify/", MagicLinkVerifyView.as_view(), name="magic-verify"),
     # JWT Auth
     path("auth/jwt/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/jwt/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

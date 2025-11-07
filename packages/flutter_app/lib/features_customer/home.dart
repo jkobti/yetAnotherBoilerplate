@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import '../core/api_client.dart';
-import '../core/auth/auth_repository.dart';
-import '../core/auth/token_storage.dart';
+// Removed direct repository/token imports; relying on global authStateProvider.
 import '../core/push/push_service.dart';
 import '../core/widgets/app_scaffold.dart';
 import '../core/auth/auth_state.dart';
@@ -21,7 +20,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _status = 'unknown';
   bool _loading = false;
   String? _error;
-  Map<String, dynamic>? _me;
 
   Future<void> _checkHealth() async {
     setState(() {
@@ -44,26 +42,19 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  Future<void> _loadAuthAndMe() async {
-    final repo = AuthRepository(ApiClient.I, TokenStorage());
-    await repo.init();
-    final me = await repo.me();
-    if (mounted) setState(() => _me = me);
-  }
-
   Future<void> _logout() async {
     await ref.read(authStateProvider.notifier).signOut();
-    if (mounted) setState(() => _me = null);
   }
 
   @override
   void initState() {
     super.initState();
-    _loadAuthAndMe();
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authStateProvider);
+    final meData = authState.asData?.value;
     return AppScaffold(
       title: 'Customer App',
       body: Center(
@@ -90,7 +81,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                       : const Text('Check health'),
                 ),
                 const SizedBox(height: 24),
-                if (_me == null) ...[
+                if (authState.isLoading) ...[
+                  const SizedBox(height: 8),
+                  const CircularProgressIndicator(),
+                ] else if (meData == null) ...[
                   const Text('You are not signed in.'),
                   const SizedBox(height: 8),
                   OutlinedButton(
@@ -103,7 +97,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: const Text('Create an account'),
                   ),
                 ] else ...[
-                  Text('Signed in as: ${_me!['email']}'),
+                  Text('Signed in as: ${meData['email']}'),
                   const SizedBox(height: 8),
                   OutlinedButton(
                     onPressed: _logout,
@@ -121,11 +115,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                             const Text('Push notifications demo'),
                             const SizedBox(height: 8),
                             OutlinedButton(
-                              onPressed: () => PushService.initializeAndRegister(context),
+                              onPressed: () =>
+                                  PushService.initializeAndRegister(context),
                               child: const Text('Enable push'),
                             ),
                             const SizedBox(height: 8),
-                            const Text('Incoming messages will appear as a Snackbar while this tab is active.'),
+                            const Text(
+                                'Incoming messages will appear as a Snackbar while this tab is active.'),
                           ],
                         ),
                       ),

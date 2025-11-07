@@ -8,7 +8,7 @@ This document tracks the implementation status of all features across the yetAno
 - ⬜ = Not yet implemented
 - 🚧 = Partially implemented / In progress
 
-**Last Updated:** December 2025
+**Last Updated:** November 2025
 
 ---
 
@@ -43,6 +43,7 @@ This document tracks the implementation status of all features across the yetAno
 - [x] ✅ `/api/auth/jwt/verify/` - Verify token
 - [x] ✅ `/api/auth/register/` - User registration
 - [x] ✅ `/api/push/register/` - Device token registration
+- [x] ✅ Passwordless magic link request & verify endpoints (`/api/auth/magic/request/`, `/api/auth/magic/verify/`) – single-use, 5 min expiry
 - [ ] ⬜ Pagination implementation (configured but not tested)
 - [ ] ⬜ Filtering & sorting query params
 - [ ] ⬜ Cursor-based pagination
@@ -119,6 +120,7 @@ This document tracks the implementation status of all features across the yetAno
 - [x] ✅ Token storage (localStorage)
 - [x] ✅ Current user display (home page)
 - [x] ✅ API client auth token injection
+- [x] ✅ Passwordless email magic link login (auto deep link & code entry fallback)
 - [ ] ⬜ Protected route guards
 - [ ] ⬜ Auto token refresh
 - [ ] ⬜ Password reset flow

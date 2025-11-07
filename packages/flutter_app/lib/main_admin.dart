@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import 'core/router.dart';
 import 'core/theme/theme_controller.dart';
 
 void main() {
+  // Path URL strategy ensures admin deep links (including magic verify) work
+  // without needing hash-based URLs.
+  usePathUrlStrategy();
   runApp(const ProviderScope(child: AdminApp()));
 }
 
