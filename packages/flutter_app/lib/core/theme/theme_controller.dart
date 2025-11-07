@@ -9,11 +9,16 @@ final themeModeProvider =
 class ThemeController extends StateNotifier<ThemeMode> {
   ThemeController() : super(ThemeMode.system);
 
+  void setThemeMode(ThemeMode mode) {
+    state = mode;
+  }
+
   void toggle() {
-    if (state == ThemeMode.dark) {
-      state = ThemeMode.light;
-    } else {
-      state = ThemeMode.dark;
-    }
+    final newState = switch (state) {
+      ThemeMode.system => ThemeMode.dark,
+      ThemeMode.dark => ThemeMode.light,
+      ThemeMode.light => ThemeMode.dark,
+    };
+    state = newState;
   }
 }

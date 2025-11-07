@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../theme/theme_controller.dart';
 import '../../core/push/push_service.dart';
 import '../auth/auth_state.dart';
+import 'app_footer.dart';
 
 class AppScaffold extends ConsumerWidget {
   final String title;
@@ -32,7 +33,12 @@ class AppScaffold extends ConsumerWidget {
           IconButton(
             tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
+            onPressed: () {
+              // Flip based on the current effective theme, so first click always changes
+              ref
+                  .read(themeModeProvider.notifier)
+                  .setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
+            },
           ),
           // Primary nav
           if (_isWide(context)) ..._navActions(context, ref, me) else _navMenu(context, ref, me),
@@ -44,7 +50,24 @@ class AppScaffold extends ConsumerWidget {
             ),
         ],
       ),
-      body: body,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  body,
+                  if (!isAdmin) const AppFooter(),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

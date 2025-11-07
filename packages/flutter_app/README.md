@@ -11,6 +11,24 @@ The app is Flutter + Riverpod + go_router + Dio. It reads the API base URL from 
 
 Prereqs: Flutter SDK with web enabled.
 
+## Install dependencies
+
+Install pub packages for this package:
+
+```zsh
+cd packages/flutter_app
+flutter pub get
+```
+
+If you use FVM:
+
+```zsh
+cd packages/flutter_app
+fvm flutter pub get
+```
+
+If the app is already running, restart it after adding new dependencies.
+
 - Customer app (Chrome):
 
 ```zsh
@@ -174,3 +192,31 @@ The script reads `.env`, converts keys into `--dart-define` flags, and runs the 
 
 - Mobile targets (iOS/Android) will be added later. The project currently contains only the web wrapper (`web/`).
 - Shared UI kit (`packages/ui_kit`) is not yet created; components use Material defaults.
+
+## Static content pages (About, Privacy Policy, Terms)
+
+The customer app includes static content pages rendered from Markdown:
+
+- Routes: `/about`, `/privacy`, `/terms`
+- Source files: `assets/content/about.md`, `assets/content/privacy.md`, `assets/content/terms.md`
+- Asset registration: listed under `flutter.assets` in `pubspec.yaml`
+
+Rendering details:
+
+- Markdown is rendered with the `flutter_markdown` package inside a centered, max-width container.
+- Scrolling is handled by the top-level scaffold; the Markdown widget itself does not scroll independently.
+- The footer is appended after the page content. It stays at the bottom of the viewport for short pages and appears after scrolling for long pages.
+
+Flutter Web asset path nuance:
+
+- Web builds serve assets under `assets/…`. The app uses a small `kIsWeb` check to load `content/*.md` on web and `assets/content/*.md` on other platforms, so no additional configuration is required when adding new Markdown files—just register them in `pubspec.yaml`.
+
+Hot reload vs assets:
+
+- Asset changes (Markdown files) are picked up reliably after a hot restart. For production builds, run `flutter build web` to bundle updated assets.
+
+Extending with new pages:
+
+1) Create a new Markdown file under `assets/content/` and register it in `pubspec.yaml`.
+2) Add a simple page widget that loads the file with `rootBundle.loadString(...)` following the existing pattern.
+3) Add a route in `lib/core/router.dart` and a link in the footer if desired.

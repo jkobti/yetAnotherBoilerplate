@@ -139,6 +139,8 @@ This document tracks the implementation status of all features across the yetAno
 - [ ] ⬜ Loading states
 - [ ] ⬜ Offline support / service worker
 
+- [x] ✅ Static info pages (About, Privacy Policy, Terms) from Markdown
+
 ### Testing (Frontend)
 - [ ] ⬜ Widget unit tests
 - [ ] ⬜ State provider tests

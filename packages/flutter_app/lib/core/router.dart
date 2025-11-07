@@ -9,6 +9,7 @@ import '../features_customer/landing.dart';
 import '../features_customer/login.dart';
 import '../features_customer/signup.dart';
 import '../core/widgets/auth_guard.dart';
+import '../features_customer/main_pages_batch.dart';
 
 final GoRouter _customerRouter = GoRouter(
   routes: [
@@ -35,6 +36,72 @@ final GoRouter _customerRouter = GoRouter(
       name: 'signup',
       pageBuilder: (context, state) =>
           const MaterialPage(child: SignupPage(redirectPath: '/app')),
+    ),
+    GoRoute(
+      path: '/features',
+      name: 'features',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: FeaturesPage()),
+    ),
+    GoRoute(
+      path: '/use-cases',
+      name: 'use-cases',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: UseCasesPage()),
+    ),
+    GoRoute(
+      path: '/pricing',
+      name: 'pricing',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: PricingPage()),
+    ),
+    GoRoute(
+      path: '/documentation',
+      name: 'documentation',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: DocumentationPage()),
+    ),
+    GoRoute(
+      path: '/api-reference',
+      name: 'api-reference',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: ApiReferencePage()),
+    ),
+    GoRoute(
+      path: '/blog',
+      name: 'blog',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: BlogPage()),
+    ),
+    GoRoute(
+      path: '/support',
+      name: 'support',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: SupportPage()),
+    ),
+    GoRoute(
+      path: '/about',
+      name: 'about',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: AboutPage()),
+    ),
+    GoRoute(
+      path: '/careers',
+      name: 'careers',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: CareersPage()),
+    ),
+    GoRoute(
+      path: '/privacy',
+      name: 'privacy',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: PrivacyPage()),
+    ),
+    GoRoute(
+      path: '/terms',
+      name: 'terms',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: TermsPage()),
     ),
   ],
 );

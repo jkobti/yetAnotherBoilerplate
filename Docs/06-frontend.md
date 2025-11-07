@@ -130,6 +130,25 @@ Use CI matrix builds to parallelize platform builds. Gate releases on automated 
 
 This document should evolve alongside the client applications. When adding significant features or new platform targets (e.g., desktop), extend this guide and reference it from `Docs/main.md`.
 
+## 10. Static Content Pages (Web)
+
+The customer web app ships with simple legal/info pages rendered from Markdown:
+
+- Routes: `/about`, `/privacy`, `/terms`
+- Markdown sources: `packages/flutter_app/assets/content/{about,privacy,terms}.md`
+- Assets are registered in `packages/flutter_app/pubspec.yaml` under `flutter.assets`.
+
+Implementation notes:
+
+- Pages load Markdown via `rootBundle.loadString(...)`. On web, Flutter serves assets beneath `assets/`; the app handles this with a `kIsWeb` path adjustment.
+- The markdown content is placed in a centered container with a max width for readability.
+- Scrolling is managed by the app scaffold so the footer appears at the bottom for short pages and after scroll for long pages (no nested scroll areas).
+- To add a new static page, add a `.md` file, register it in `pubspec.yaml`, create a page widget, and add a route in `lib/core/router.dart`.
+
+UX note:
+
+- The theme toggle in the AppBar flips based on the current effective brightness so the first click always changes the theme, even when starting from `ThemeMode.system`.
+
 ## 9. Admin Portal (Webapp)
 
 A dedicated web application must be included for administrators. Its scope is intentionally narrow and security-focused:
