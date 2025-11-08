@@ -48,7 +48,6 @@ This document tracks the implementation status of all features across the yetAno
 - [ ] ⬜ Filtering & sorting query params
 - [ ] ⬜ Cursor-based pagination
 - [ ] ⬜ Password reset flow
-- [ ] ⬜ Email verification flow
 - [ ] ⬜ Organization CRUD endpoints
 - [ ] ⬜ Membership management endpoints
 - [ ] ⬜ Notification list/read endpoints
