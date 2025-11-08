@@ -351,6 +351,8 @@ This document tracks the implementation status of all features across the yetAno
 - [x] ✅ Frontend guide (06-frontend.md)
 - [x] ✅ Pre-commit tooling (07-precommit-tooling.md)
 - [x] ✅ Feature checklist (08-feature-checklist.md - this file!)
+- [x] ✅ Backend contribution & PR instructions (`.github/backend.instructions.md`)
+- [x] ✅ Flutter & UI kit folders instructions (`.github/flutter-folders.instructions.md`)
 - [ ] ⬜ API reference (generated)
 - [ ] ⬜ Architecture diagrams
 - [ ] ⬜ Deployment runbooks
