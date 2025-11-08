@@ -143,7 +143,7 @@ This document tracks the implementation status of all features across the yetAno
 - [x] ✅ Static info pages (About, Privacy Policy, Terms) from Markdown
 
 ### Testing (Frontend)
-- [ ] ⬜ Widget unit tests
+- [x] 🚧 Widget unit tests (CustomerApp smoke test)
 - [ ] ⬜ State provider tests
 - [ ] ⬜ Integration tests (flutter drive)
 - [ ] ⬜ Golden tests (visual regression)
@@ -226,11 +226,11 @@ This document tracks the implementation status of all features across the yetAno
 ## Android App
 
 ### Core Implementation
-- [ ] ⬜ Android platform wrapper (minimum API 26)
-- [ ] ⬜ Flutter shared codebase integration
-- [ ] ⬜ MainActivity configuration
-- [ ] ⬜ Gradle build configuration
-- [ ] ⬜ AndroidManifest.xml configuration
+- [x] ✅ Android platform wrapper (minimum API 26)
+- [x] ✅ Flutter shared codebase integration
+- [x] ✅ MainActivity configuration
+- [x] ✅ Gradle build configuration
+- [x] ✅ AndroidManifest.xml configuration
 - [ ] ⬜ Google Play Console setup
 - [ ] ⬜ Basic app signing
 

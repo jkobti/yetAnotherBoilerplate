@@ -84,30 +84,24 @@ This single Flutter project builds both your Customer and Admin apps by using tw
 ├── Dockerfile.admin.web    # Builds NGINX container for Admin Portal
 │
 ├── android/                # Android platform wrapper
-├── ios/                    # iOS platform wrapper
 ├── web/                    # Web platform wrapper
 │
 ├── lib/
-│   ├── main.dart           <-- 1. Entry point for Customer App
-│   ├── main_admin.dart     <-- 2. Entry point for Admin App
-│   │
-│   ├── core/               # Shared services for both apps
-│   │   ├── api_client.dart # Generated OpenAPI client (dio)
-│   │   └── router.dart     # go_router configuration
-│   │
-│   ├── features_customer/  # Screens & logic for the Customer App
-│   │   ├── auth/           # Login/logout flow
-│   │   └── home/
-│   │
-│   └── features_admin/     # Screens & logic for the Admin App
-│       ├── auth/           # Admin login flow
-│       └── dashboard/      # Metrics and stats
+│   ├── main.dart           <-- Entry point for the customer app (web + mobile)
+│   ├── main_admin.dart     <-- Entry point for the admin web portal
+│   ├── apps/               # MaterialApp shells for customer/admin targets
+│   ├── bootstrap/          # Shared bootstrappers (ProviderScope, URL strategy)
+│   ├── core/               # Shared services (routing, api, theme, auth)
+│   ├── features_customer/  # Screens & logic for the customer app
+│   └── features_admin/     # Screens & logic for the admin app
 │
 └── pubspec.yaml            # Manages all dependencies (Riverpod, dio, etc.)
     # ...
     # dependencies:
     #   ui_kit:
     #     path: ../ui_kit    <-- Imports the shared UI Kit
+
+> iOS support will reuse the same project once the native wrapper (`ios/`) is generated.
 ```
 3. Shared UI Kit (packages/ui_kit/)
 This is a local Flutter library that packages/flutter_app depends on. It fulfills your requirement to have a shared design system.

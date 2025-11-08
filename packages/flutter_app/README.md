@@ -1,15 +1,16 @@
-# Flutter Web Frontend
+# Flutter Frontend Apps
 
-This package provides the web frontends for yetAnotherBoilerplate:
+This package provides the shared Flutter frontend for yetAnotherBoilerplate:
 
 - Customer app: entry `lib/main.dart`
 - Admin portal: entry `lib/main_admin.dart`
+- Android customer wrapper lives under `android/`
 
 The app is Flutter + Riverpod + go_router + Dio. It reads the API base URL from the `API_BASE_URL` compile-time define.
 
-## Quick start (web)
+## Quick start
 
-Prereqs: Flutter SDK with web enabled.
+Prereqs: Flutter SDK with web and Android enabled (`flutter config --enable-web --enable-android`).
 
 ## Install dependencies
 
@@ -29,6 +30,8 @@ fvm flutter pub get
 
 If the app is already running, restart it after adding new dependencies.
 
+### Run (web)
+
 - Customer app (Chrome):
 
 ```zsh
@@ -39,6 +42,20 @@ flutter run -d chrome -t lib/main.dart --dart-define API_BASE_URL=http://localho
 
 ```zsh
 flutter run -d chrome -t lib/main_admin.dart --dart-define API_BASE_URL=http://localhost:8000
+```
+
+### Run (Android)
+
+Make sure an Android emulator or device is available (e.g., `flutter devices`). Then run:
+
+```zsh
+flutter run -d android -t lib/main.dart --dart-define-from-file=env/local.json
+```
+
+Alternatively, the helper script infers `--dart-define` values from `.env`:
+
+```zsh
+./scripts/run_with_env.zsh customer android
 ```
 
 The Home/Dashboard screen includes a "health" button that calls `GET /health/` on the backend and shows the status.
@@ -61,6 +78,18 @@ flutter build web --release --web-renderer canvaskit --dart-define API_BASE_URL=
 
 ```zsh
 flutter build web -t lib/main_admin.dart --release --web-renderer canvaskit --dart-define API_BASE_URL=https://api.example.com
+```
+
+- Customer Android build (Play bundle):
+
+```zsh
+flutter build appbundle -t lib/main.dart --dart-define-from-file=env/prod.json
+```
+
+For sideloading or emulator testing you can also build an APK:
+
+```zsh
+flutter build apk -t lib/main.dart --dart-define-from-file=env/local.json
 ```
 
 ## Docker
@@ -183,15 +212,18 @@ FIREBASE_VAPID_KEY=...
 Then run:
 
 ```zsh
-./scripts/run_with_env.zsh customer   # or: admin
+./scripts/run_with_env.zsh customer           # defaults to Chrome
+./scripts/run_with_env.zsh customer android   # run on Android
+./scripts/run_with_env.zsh admin chrome       # admin portal on Chrome
 ```
 
 The script reads `.env`, converts keys into `--dart-define` flags, and runs the chosen entrypoint.
 
 ## Notes
 
-- Mobile targets (iOS/Android) will be added later. The project currently contains only the web wrapper (`web/`).
-- Shared UI kit (`packages/ui_kit`) is not yet created; components use Material defaults.
+- Android support is available via the committed `android/` wrapper. iOS will follow once the native project is generated.
+- The shared UI kit lives in `packages/ui_kit` and provides the `YabTheme` helpers used by the app shells.
+- `android/app/src/main/AndroidManifest.xml` enables cleartext traffic to reach `http://localhost:8000` during development. Swap to HTTPS or a stricter network security config before production releases.
 
 ## Static content pages (About, Privacy Policy, Terms)
 

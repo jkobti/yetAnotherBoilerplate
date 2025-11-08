@@ -2,43 +2,43 @@
 
 This document captures the detailed guidance for building and operating the client applications that ship with the yetanotherboilerplate project. A single Flutter codebase targets web, iOS, and Android; this doc expands on the core stack, optional integrations, and platform-specific release processes.
 
-> Current status (Nov 2025): The Flutter project is initialized with web support and two entry points: `lib/main.dart` (Customer) and `lib/main_admin.dart` (Admin). Mobile platform wrappers (iOS/Android) will be added later.
+> Current status (Nov 2025): The Flutter project now ships web (customer + admin) and Android (customer) targets from `packages/flutter_app`. The shared code lives under `lib/`, with entry points `lib/main.dart` (customer) and `lib/main_admin.dart` (admin). The Android wrapper is committed under `packages/flutter_app/android/`. An iOS wrapper will follow the same pattern when added.
 
 > UI kit: A shared Flutter package now lives at `packages/ui_kit/` with theme tokens (spacing, color-seeded themes) and a `PrimaryButton` widget. The web apps consume it via a local path dependency.
 
 ## 1. Core Stack
 
-| Layer                | Recommendation                             | Notes                                                     |
-| :------------------- | :----------------------------------------- | :-------------------------------------------------------- |
-| Framework            | Flutter (stable channel)                   | Shared UI toolkit across web, iOS, Android.               |
-| State management     | Riverpod or Bloc                           | Pick one consistently; examples assume Riverpod.          |
-| API client           | `dio` + generated clients from OpenAPI     | Backed by the backend OpenAPI schema (`drf-spectacular`). |
-| Design system        | Custom component library in `packages/ui/` | Encapsulate typography, spacing, color tokens.            |
-| Routing              | `go_router`                                | Declarative deep-link friendly navigation.                |
-| Analytics (optional) | Segment (or Firebase Analytics)            | Feature-flagged via environment variables.                |
+| Layer                | Recommendation                                 | Notes                                                     |
+| :------------------- | :--------------------------------------------- | :-------------------------------------------------------- |
+| Framework            | Flutter (stable channel)                       | Shared UI toolkit across web, iOS, Android.               |
+| State management     | Riverpod or Bloc                               | Pick one consistently; examples assume Riverpod.          |
+| API client           | `dio` + generated clients from OpenAPI         | Backed by the backend OpenAPI schema (`drf-spectacular`). |
+| Design system        | Custom component library in `packages/ui_kit/` | Encapsulate typography, spacing, color tokens.            |
+| Routing              | `go_router`                                    | Declarative deep-link friendly navigation.                |
+| Analytics (optional) | Segment (or Firebase Analytics)                | Feature-flagged via environment variables.                |
 
 ### Project layout (conceptual)
 
 ```
 packages/
-	web/
+	flutter_app/
+		android/                # Native Android wrapper (Gradle, manifest, launcher icons)
+		web/                    # Web wrapper (index.html, service worker)
 		lib/
-			main_web.dart
-	ios/
-		Runner/
-			AppDelegate.swift
-	android/
-		app/src/main/kotlin/.../MainActivity.kt
-	shared_flutter/
-		lib/
-			main.dart          # entry point used by mobile builds
-			src/
-				app.dart
-				features/
-				shared/
+			apps/
+				customer_app.dart   # Customer MaterialApp.router shell
+				admin_app.dart      # Admin MaterialApp.router shell
+			bootstrap/
+				customer_bootstrap.dart
+				admin_bootstrap.dart
+				url_strategy_*.dart
+			core/                 # Shared services (routing, auth, API client, theme)
+			features_customer/    # Customer-facing UI flows
+			features_admin/       # Admin portal UI
+			scripts/              # Helper tooling (run_with_env.zsh, Firebase injection)
 ```
 
-`packages/shared_flutter/` contains the bulk of the Flutter application. Platform folders (`web/`, `ios/`, `android/`) wrap the shared code with platform-specific build targets and native configuration.
+The single Flutter project under `packages/flutter_app/` houses all shared UI logic. Platform folders add the necessary native scaffolding per target. Android is present today; the iOS wrapper will mirror this layout when created.
 
 ## 2. Platform Notes
 
@@ -60,6 +60,8 @@ packages/
 ### 2.3 Android
 
 - Minimum version: Android 8.0 (API level 26).
+- Local dev: `flutter run -d android --dart-define-from-file=env/local.json` (or `./scripts/run_with_env.zsh customer android`). The Gradle wrapper reads `API_BASE_URL` from the compile-time defines, so keep env files in sync with web targets.
+- The Android manifest enables `android:usesCleartextTraffic="true"` so HTTP calls to `http://localhost:8000` work during development. Replace with a proper network security config before shipping production builds over HTTPS.
 - Gradle build wrappers are committed and pinned; use `./gradlew assembleRelease` via `flutter build apk`.
 - Upload signing keys to a secure secret manager; wire them into CI using environment variables.
 - Support Play App Signing to simplify key rotation.
@@ -94,7 +96,7 @@ Use `flutter --dart-define-from-file=env/local.json` for local development and H
 ## 5. Development Workflow
 
 1. Run the backend locally (or via remote tunnel) so the API is reachable.
-2. Start Flutter development server: `flutter run -d chrome` for web or attach to simulators/emulators for mobile.
+2. Start Flutter development server: `flutter run -d chrome` for web, `flutter run -d android` (or iOS simulator once added) for mobile.
 3. Watch mode: rely on Hot Reload; ensure state management resets correctly when toggles change.
 4. Golden tests: store reference images per component to avoid regressions; run with `flutter test --update-goldens` only when intentional.
 

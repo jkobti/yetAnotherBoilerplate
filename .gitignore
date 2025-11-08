@@ -8,3 +8,4 @@ packages/backend/.env
 packages/backend/db.sqlite3
 packages/backend/yetanotherboilerplate-firebase-adminsdk-fbsvc-a8f1ed6c4b.json
 packages/flutter_app/web/env/
+packages/flutter_app/env/prod.json

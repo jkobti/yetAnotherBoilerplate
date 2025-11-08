@@ -1,8 +1,9 @@
 #!/usr/bin/env zsh
 # Convert a local .env file into --dart-define flags and run Flutter.
 # Usage:
-#   ./scripts/run_with_env.zsh customer   # runs lib/main.dart
-#   ./scripts/run_with_env.zsh admin      # runs lib/main_admin.dart
+#   ./scripts/run_with_env.zsh customer           # runs lib/main.dart on Chrome
+#   ./scripts/run_with_env.zsh customer android   # runs on an Android device/emulator
+#   ./scripts/run_with_env.zsh admin chrome       # runs admin portal on Chrome
 
 set -euo pipefail
 
@@ -14,9 +15,33 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-ENTRY="lib/main.dart"
-if [[ ${1:-customer} == "admin" ]]; then
-  ENTRY="lib/main_admin.dart"
+APP_KIND=${1:-customer}
+if [[ $# -gt 0 ]]; then
+  shift
+fi
+
+case "$APP_KIND" in
+  customer|user)
+    ENTRY="lib/main.dart"
+    ;;
+  admin)
+    ENTRY="lib/main_admin.dart"
+    ;;
+  *)
+    echo "[run_with_env] Unknown app kind: $APP_KIND"
+    exit 1
+    ;;
+esac
+
+DEVICE="chrome"
+if [[ $# -gt 0 ]]; then
+  DEVICE="$1"
+  shift
+fi
+
+EXTRA_ARGS=()
+if [[ $# -gt 0 ]]; then
+  EXTRA_ARGS=("$@")
 fi
 
 # Read .env into dart-define flags (ignore comments and empty lines)
@@ -36,4 +61,4 @@ if ! grep -q '^API_BASE_URL=' .env; then
 fi
 
 # Run Flutter
-exec flutter run -d chrome -t "$ENTRY" ${FLAGS[@]}
+exec flutter run -d "$DEVICE" -t "$ENTRY" "${FLAGS[@]}" "${EXTRA_ARGS[@]}"

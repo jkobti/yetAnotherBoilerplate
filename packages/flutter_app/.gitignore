@@ -9,6 +9,7 @@ flutter_*.jpg
 .flutter-plugins
 .flutter-plugins-dependencies
 .metadata
+*.iml
 .gradle/
 .idea/
 android/.gradle/
