@@ -178,7 +178,7 @@ This document tracks the implementation status of all features across the yetAno
 - [x] ✅ User detail view
 - [ ] ⬜ Operational statistics dashboard
 - [ ] ⬜ Business metrics dashboard
-- [ ] ⬜ Feature toggle management UI
+- [x] ✅ Feature toggle management UI
 - [ ] ⬜ Background job control panel
 - [ ] ⬜ Maintenance task triggers
 - [ ] ⬜ System health monitoring
@@ -186,7 +186,7 @@ This document tracks the implementation status of all features across the yetAno
 - [ ] ⬜ API key management
 - [ ] ⬜ Organization admin tools
 - [ ] ⬜ Notification broadcast interface
-- [ ] ⬜ Push notification testing UI
+- [x] ✅ Push notification testing UI
 
 ### Optional Admin Features ⚙️
 - [ ] ⚙️ Grafana dashboard embedding
