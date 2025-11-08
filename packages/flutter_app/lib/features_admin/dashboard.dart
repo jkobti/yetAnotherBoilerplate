@@ -368,7 +368,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                   Navigator.pop(ctx);
                   ref.read(featureFlagsProvider.notifier).refresh();
                 } catch (e) {
-                  String friendly = 'Unable to create flag. Ensure the key is unique and try again.';
+                  String friendly =
+                      'Unable to create flag. Ensure the key is unique and try again.';
                   final raw = e.toString();
                   final lower = raw.toLowerCase();
                   if (lower.contains('already exists')) {
