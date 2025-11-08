@@ -34,6 +34,36 @@ class MeView(APIView):
         }
         return Response({"data": data})
 
+    def patch(self, request):
+        user = request.user
+        first_name = request.data.get("first_name", "").strip()
+        last_name = request.data.get("last_name", "").strip()
+
+        if not first_name:
+            return Response(
+                {"error": "first_name is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not last_name:
+            return Response(
+                {"error": "last_name is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+
+        data = {
+            "id": str(user.id),
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "is_staff": user.is_staff,
+            "date_joined": user.date_joined.isoformat(),
+        }
+        return Response({"data": data})
+
 
 User = get_user_model()
 

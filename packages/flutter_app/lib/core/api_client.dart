@@ -74,6 +74,17 @@ class ApiClient {
     return (resp.data as Map).cast<String, dynamic>();
   }
 
+  Future<Map<String, dynamic>> updateProfile(
+    String firstName,
+    String lastName,
+  ) async {
+    final resp = await _dio.patch('/api/v1/me', data: {
+      'first_name': firstName,
+      'last_name': lastName,
+    });
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
   Future<Map<String, dynamic>> register({
     required String email,
     required String password,

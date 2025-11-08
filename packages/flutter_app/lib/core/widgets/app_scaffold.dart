@@ -24,8 +24,9 @@ class AppScaffold extends ConsumerWidget {
     final auth = ref.watch(authStateProvider);
     final me = auth.valueOrNull;
     final themeMode = ref.watch(themeModeProvider);
-    final isDark =
-        themeMode == ThemeMode.dark || (themeMode == ThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+    final isDark = themeMode == ThemeMode.dark ||
+        (themeMode == ThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
@@ -40,8 +41,13 @@ class AppScaffold extends ConsumerWidget {
                   .setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
             },
           ),
+          const SizedBox(width: 8),
           // Primary nav
-          if (_isWide(context)) ..._navActions(context, ref, me) else _navMenu(context, ref, me),
+          if (_isWide(context))
+            ..._navActions(context, ref, me)
+          else
+            _navMenu(context, ref, me),
+          const SizedBox(width: 8),
           if (PushService.isEnabled)
             IconButton(
               tooltip: 'Enable notifications',
@@ -75,7 +81,8 @@ class AppScaffold extends ConsumerWidget {
     return MediaQuery.of(context).size.width >= 720;
   }
 
-  List<Widget> _navActions(BuildContext context, WidgetRef ref, Map<String, dynamic>? me) {
+  List<Widget> _navActions(
+      BuildContext context, WidgetRef ref, Map<String, dynamic>? me) {
     final isLoggedIn = me != null;
     if (isAdmin) {
       final isStaff = (me?['is_staff'] == true);
@@ -114,6 +121,10 @@ class AppScaffold extends ConsumerWidget {
           child: const Text('Home'),
         ),
         TextButton(
+          onPressed: () => context.go('/profile'),
+          child: const Text('Profile'),
+        ),
+        TextButton(
           onPressed: () async {
             await ref.read(authStateProvider.notifier).signOut();
             if (context.mounted) context.go('/');
@@ -139,7 +150,8 @@ class AppScaffold extends ConsumerWidget {
     }
   }
 
-  Widget _navMenu(BuildContext context, WidgetRef ref, Map<String, dynamic>? me) {
+  Widget _navMenu(
+      BuildContext context, WidgetRef ref, Map<String, dynamic>? me) {
     return PopupMenuButton<String>(
       tooltip: 'Menu',
       onSelected: (value) {
@@ -162,21 +174,25 @@ class AppScaffold extends ConsumerWidget {
           if (isLoggedIn) {
             final items = <PopupMenuEntry<String>>[
               const PopupMenuItem(value: '/', child: Text('Dashboard')),
-              if (isStaff) const PopupMenuItem(value: '/users', child: Text('Users')),
+              if (isStaff)
+                const PopupMenuItem(value: '/users', child: Text('Users')),
               const PopupMenuItem(value: '#logout', child: Text('Logout')),
-              const PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
+              const PopupMenuItem(
+                  value: '#toggle-theme', child: Text('Toggle theme')),
             ];
             return items;
           } else {
             return const [
               PopupMenuItem(value: '/login', child: Text('Login')),
-              PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
+              PopupMenuItem(
+                  value: '#toggle-theme', child: Text('Toggle theme')),
             ];
           }
         }
         if (isLoggedIn) {
           return const [
             PopupMenuItem(value: '/app', child: Text('Home')),
+            PopupMenuItem(value: '/profile', child: Text('Profile')),
             PopupMenuItem(value: '#logout', child: Text('Logout')),
             PopupMenuItem(value: '#toggle-theme', child: Text('Toggle theme')),
           ];

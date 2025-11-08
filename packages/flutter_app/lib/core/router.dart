@@ -9,6 +9,8 @@ import '../features_customer/landing.dart';
 import '../features_customer/login.dart';
 import '../features_customer/magic_link_login.dart';
 import '../features_customer/magic_link_verify.dart';
+import '../features_customer/profile.dart';
+import '../features_customer/profile_setup.dart';
 import '../features_customer/signup.dart';
 import '../core/widgets/auth_guard.dart';
 import '../features_customer/main_pages_batch.dart';
@@ -24,6 +26,17 @@ final GoRouter _customerRouter = GoRouter(
       path: '/app',
       name: 'home',
       pageBuilder: (context, state) => const MaterialPage(child: HomePage()),
+    ),
+    GoRoute(
+      path: '/profile',
+      name: 'profile',
+      pageBuilder: (context, state) => const MaterialPage(child: ProfilePage()),
+    ),
+    GoRoute(
+      path: '/profile-setup',
+      name: 'profile-setup',
+      pageBuilder: (context, state) =>
+          const MaterialPage(child: ProfileSetupPage()),
     ),
     GoRoute(
       path: '/login',

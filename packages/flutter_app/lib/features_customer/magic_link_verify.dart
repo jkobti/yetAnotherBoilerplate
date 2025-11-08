@@ -88,9 +88,22 @@ class _MagicLinkVerifyPageState extends ConsumerState<MagicLinkVerifyPage> {
         _done = true;
         _verifying = false;
       });
+
+      // Check if user needs to complete their profile (first name and last name)
+      final authState = ref.read(authStateProvider);
+      final meData = authState.asData?.value;
+      final needsProfileSetup = (meData?['first_name']?.isEmpty ?? true) ||
+          (meData?['last_name']?.isEmpty ?? true);
+
       // ignore: avoid_print
-      print('[MagicLinkVerifyPage] redirecting to ${widget.redirectPath}');
-      if (mounted) context.go(widget.redirectPath);
+      print('[MagicLinkVerifyPage] needsProfileSetup=$needsProfileSetup');
+      if (mounted) {
+        if (needsProfileSetup) {
+          context.go('/profile-setup');
+        } else {
+          context.go(widget.redirectPath);
+        }
+      }
     } catch (e) {
       // ignore: avoid_print
       print('[MagicLinkVerifyPage] verification error=$e');
@@ -175,7 +188,21 @@ class _MagicLinkVerifyPageState extends ConsumerState<MagicLinkVerifyPage> {
                                 _done = true;
                                 _verifying = false;
                               });
-                              if (mounted) context.go(widget.redirectPath);
+
+                              // Check if user needs to complete their profile
+                              final authState = ref.read(authStateProvider);
+                              final meData = authState.asData?.value;
+                              final needsProfileSetup =
+                                  (meData?['first_name']?.isEmpty ?? true) ||
+                                      (meData?['last_name']?.isEmpty ?? true);
+
+                              if (mounted) {
+                                if (needsProfileSetup) {
+                                  context.go('/profile-setup');
+                                } else {
+                                  context.go(widget.redirectPath);
+                                }
+                              }
                             } catch (e) {
                               setState(() {
                                 _error = e.toString();
