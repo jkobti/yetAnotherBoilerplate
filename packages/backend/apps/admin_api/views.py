@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.featureflags.models import FeatureFlag
+from apps.featureflags.serializers import FeatureFlagSerializer
 from apps.notifications.models import DeviceToken
 
 from .models import AdminAudit
@@ -269,3 +271,71 @@ class UserDetailView(APIView):
             raise NotFound("User not found") from None
 
         return Response(user)
+
+
+class FeatureFlagListCreateView(APIView):
+    """List and create feature flags (admin-only)."""
+
+    permission_classes = [IsAdminUser]
+    throttle_scope = "admin"
+
+    def get(self, request):
+        qs = FeatureFlag.objects.all().order_by("key")
+        data = FeatureFlagSerializer(qs, many=True).data
+        return Response({"flags": data})
+
+    def post(self, request):
+        ser = FeatureFlagSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+        AdminAudit.objects.create(
+            user=request.user,
+            path=request.path,
+            method=request.method,
+            action=f"featureflag_create:{obj.key}",
+        )
+        return Response(FeatureFlagSerializer(obj).data, status=status.HTTP_201_CREATED)
+
+
+class FeatureFlagDetailView(APIView):
+    """Retrieve, update, delete a feature flag."""
+
+    permission_classes = [IsAdminUser]
+    throttle_scope = "admin"
+
+    def get_object(self, flag_id):
+        from rest_framework.exceptions import NotFound
+
+        try:
+            return FeatureFlag.objects.get(id=flag_id)
+        except FeatureFlag.DoesNotExist:  # pragma: no cover - simple path
+            raise NotFound("Feature flag not found") from None
+
+    def get(self, request, flag_id):
+        obj = self.get_object(flag_id)
+        return Response(FeatureFlagSerializer(obj).data)
+
+    def patch(self, request, flag_id):
+        obj = self.get_object(flag_id)
+        ser = FeatureFlagSerializer(obj, data=request.data, partial=True)
+        ser.is_valid(raise_exception=True)
+        ser.save()
+        AdminAudit.objects.create(
+            user=request.user,
+            path=request.path,
+            method=request.method,
+            action=f"featureflag_update:{obj.key}",
+        )
+        return Response(FeatureFlagSerializer(obj).data)
+
+    def delete(self, request, flag_id):
+        obj = self.get_object(flag_id)
+        key = obj.key
+        obj.delete()
+        AdminAudit.objects.create(
+            user=request.user,
+            path=request.path,
+            method=request.method,
+            action=f"featureflag_delete:{key}",
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)

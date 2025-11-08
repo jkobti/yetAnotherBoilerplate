@@ -62,7 +62,7 @@ This document tracks the implementation status of all features across the yetAno
 - [x] ✅ Admin throttling configured (`admin` scope)
 - [ ] ⬜ Admin audit logging
 - [ ] ⬜ Metrics/statistics endpoints
-- [ ] ⬜ Feature flag management endpoints
+- [x] ✅ Feature flag management endpoints
 - [ ] ⬜ Job control endpoints
 - [ ] ⬜ User management endpoints (CRUD - create/update/delete)
 - [ ] ⬜ Organization admin endpoints

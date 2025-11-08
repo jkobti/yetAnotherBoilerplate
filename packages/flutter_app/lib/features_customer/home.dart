@@ -8,6 +8,7 @@ import '../core/api_client.dart';
 import '../core/push/push_service.dart';
 import '../core/widgets/app_scaffold.dart';
 import '../core/auth/auth_state.dart';
+import '../core/feature_flags/feature_flags_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -55,6 +56,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
     final meData = authState.asData?.value;
+    final demoFeatureEnabled =
+        ref.watch(featureFlagSelectorProvider('demo_feature'));
     return AppScaffold(
       title: 'Customer App',
       body: Center(
@@ -104,6 +107,64 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: const Text('Logout'),
                   ),
                   const SizedBox(height: 24),
+                  // Instructional title (always visible, independent of flag-gated card)
+                  const SizedBox(height: 12),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'please add flag feature_flag to revel magic',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  if (demoFeatureEnabled)
+                    Builder(
+                      builder: (context) {
+                        final cs = Theme.of(context).colorScheme;
+                        final cardBg = cs.brightness == Brightness.dark
+                            ? cs.surfaceContainerHighest.withOpacity(0.6)
+                            : cs.surfaceContainerHighest;
+                        final headingStyle = Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold);
+                        final bodyStyle =
+                            Theme.of(context).textTheme.bodyMedium;
+                        return Card(
+                          color: cardBg,
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(18.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('Demo Feature', style: headingStyle),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'This component is controlled by the "demo_feature" flag. Toggle it from the admin portal to show/hide this card and press refresh to re-fetch flags.',
+                                  style: bodyStyle,
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    OutlinedButton(
+                                      onPressed: () => ref
+                                          .read(featureFlagsProvider.notifier)
+                                          .refresh(),
+                                      child: const Text('Refresh flags'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   if (PushService.isEnabled)
                     Card(
                       child: Padding(

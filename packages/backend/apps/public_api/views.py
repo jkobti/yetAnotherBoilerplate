@@ -10,6 +10,7 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.featureflags.models import FeatureFlag
 from apps.notifications.models import DeviceToken
 from apps.users.magic_link import (
     create_magic_link,
@@ -194,3 +195,20 @@ class MagicLinkVerifyView(APIView):
             },
         }
         return Response(data)
+
+
+class ActiveFeatureFlagsView(APIView):
+    """Public endpoint returning currently enabled feature flag keys.
+
+    Response shape kept minimal for first iteration. Frontend treats missing key
+    as disabled. Later we can extend with variants, rollout metadata, etc.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = []  # low-cost; adjust later if abused
+
+    def get(self, _request):
+        keys = list(
+            FeatureFlag.objects.filter(enabled=True).values_list("key", flat=True)
+        )
+        return Response({"flags": keys, "count": len(keys)})

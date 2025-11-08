@@ -5,6 +5,7 @@ import 'package:ui_kit/ui_kit.dart';
 
 import 'core/router.dart';
 import 'core/theme/theme_controller.dart';
+import 'core/feature_flags/feature_flags_provider.dart';
 
 void main() {
   // Enable path-based URL strategy so deep links like /magic-verify/<token>
@@ -22,6 +23,8 @@ class CustomerApp extends ConsumerWidget {
     final theme = YabTheme.customer();
     final darkTheme = YabTheme.customerDark();
     final mode = ref.watch(themeModeProvider);
+    // Kick off feature flags fetch early (result consumed by home page widgets)
+    ref.watch(featureFlagsProvider);
     return MaterialApp.router(
       title: 'Customer App',
       theme: theme,

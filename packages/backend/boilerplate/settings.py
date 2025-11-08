@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.public_api",
     "apps.admin_api",
+    "apps.featureflags",
 ]
 
 MIDDLEWARE = [

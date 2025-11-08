@@ -1,6 +1,13 @@
 from django.urls import path
 
-from .views import PingView, SendTestPushView, UserDetailView, UsersListView
+from .views import (
+    FeatureFlagDetailView,
+    FeatureFlagListCreateView,
+    PingView,
+    SendTestPushView,
+    UserDetailView,
+    UsersListView,
+)
 
 app_name = "admin_api"
 
@@ -9,4 +16,10 @@ urlpatterns = [
     path("users", UsersListView.as_view(), name="users-list"),
     path("users/<uuid:user_id>", UserDetailView.as_view(), name="user-detail"),
     path("push/send-test", SendTestPushView.as_view(), name="push-send-test"),
+    path("features", FeatureFlagListCreateView.as_view(), name="featureflags-list"),
+    path(
+        "features/<uuid:flag_id>",
+        FeatureFlagDetailView.as_view(),
+        name="featureflags-detail",
+    ),
 ]

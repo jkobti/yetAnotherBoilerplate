@@ -6,6 +6,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from .views import (
+    ActiveFeatureFlagsView,
     MagicLinkRequestView,
     MagicLinkVerifyView,
     MeView,
@@ -19,6 +20,7 @@ urlpatterns = [
     path("v1/me", MeView.as_view(), name="me"),
     path("auth/register/", RegisterView.as_view(), name="register"),
     path("push/register/", PushRegisterView.as_view(), name="push-register"),
+    path("features/", ActiveFeatureFlagsView.as_view(), name="featureflags-active"),
     # Magic link passwordless auth
     path("auth/magic/request/", MagicLinkRequestView.as_view(), name="magic-request"),
     path("auth/magic/verify/", MagicLinkVerifyView.as_view(), name="magic-verify"),
