@@ -272,6 +272,42 @@ class UserDetailView(APIView):
 
         return Response(user)
 
+    def delete(self, request, user_id):
+        from django.contrib.auth import get_user_model
+        from django.db import transaction
+        from rest_framework.exceptions import NotFound
+
+        User = get_user_model()
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise NotFound("User not found") from None
+
+        email = user.email
+
+        # Log the audit before deletion
+        AdminAudit.objects.create(
+            user=request.user,
+            path=request.path,
+            method=request.method,
+            action=f"delete_user:{email}",
+        )
+
+        # Use transaction to ensure consistency
+        try:
+            with transaction.atomic():
+                user.delete()
+        except Exception as e:
+            # Log the error but still return a meaningful response
+            return Response(
+                {"detail": f"Error deleting user: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response(
+            {"detail": f"User {email} deleted successfully"}, status=status.HTTP_200_OK
+        )
+
 
 class FeatureFlagListCreateView(APIView):
     """List and create feature flags (admin-only)."""

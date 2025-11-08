@@ -19,6 +19,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
   Map<String, dynamic>? _user;
   bool _loading = false;
   String? _error;
+  bool _deleting = false;
 
   @override
   void initState() {
@@ -50,6 +51,55 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
         setState(() {
           _loading = false;
         });
+      }
+    }
+  }
+
+  Future<void> _deleteUser() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete User?'),
+        content: Text(
+          'Are you sure you want to delete this user (${_user!['email']})?\n\nThis action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed ?? false) {
+      setState(() => _deleting = true);
+      try {
+        await ApiClient.I.deleteUser(widget.userId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User deleted successfully')),
+          );
+          context.go('/users');
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _error = 'Failed to delete user: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete user: $e')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _deleting = false);
+        }
       }
     }
   }
@@ -94,7 +144,8 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           _user!['email'] as String? ?? 'N/A',
@@ -107,7 +158,8 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                         if (_user!['first_name'] != null ||
                                             _user!['last_name'] != null)
                                           Text(
-                                            '${_user!['first_name'] ?? ''} ${_user!['last_name'] ?? ''}'.trim(),
+                                            '${_user!['first_name'] ?? ''} ${_user!['last_name'] ?? ''}'
+                                                .trim(),
                                             style: TextStyle(
                                               fontSize: 18,
                                               color: Colors.grey.shade700,
@@ -123,17 +175,22 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                     children: [
                                       Chip(
                                         label: Text(
-                                          (_user!['is_active'] as bool? ?? false)
+                                          (_user!['is_active'] as bool? ??
+                                                  false)
                                               ? 'Active'
                                               : 'Inactive',
                                         ),
-                                        backgroundColor: (_user!['is_active'] as bool? ?? false)
-                                            ? Colors.green.shade100
-                                            : Colors.red.shade100,
+                                        backgroundColor:
+                                            (_user!['is_active'] as bool? ??
+                                                    false)
+                                                ? Colors.green.shade100
+                                                : Colors.red.shade100,
                                         labelStyle: TextStyle(
-                                          color: (_user!['is_active'] as bool? ?? false)
-                                              ? Colors.green.shade900
-                                              : Colors.red.shade900,
+                                          color:
+                                              (_user!['is_active'] as bool? ??
+                                                      false)
+                                                  ? Colors.green.shade900
+                                                  : Colors.red.shade900,
                                         ),
                                       ),
                                       if (_user!['is_staff'] as bool? ?? false)
@@ -144,10 +201,12 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                             color: Colors.blue.shade900,
                                           ),
                                         ),
-                                      if (_user!['is_superuser'] as bool? ?? false)
+                                      if (_user!['is_superuser'] as bool? ??
+                                          false)
                                         Chip(
                                           label: const Text('Superuser'),
-                                          backgroundColor: Colors.purple.shade100,
+                                          backgroundColor:
+                                              Colors.purple.shade100,
                                           labelStyle: TextStyle(
                                             color: Colors.purple.shade900,
                                           ),
@@ -158,7 +217,8 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                               ),
                               const Divider(height: 32),
                               // Details
-                              _buildDetailRow('User ID', _user!['id']?.toString() ?? 'N/A'),
+                              _buildDetailRow(
+                                  'User ID', _user!['id']?.toString() ?? 'N/A'),
                               _buildDetailRow(
                                 'Email',
                                 _user!['email']?.toString() ?? 'N/A',
@@ -175,11 +235,15 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                 ),
                               _buildDetailRow(
                                 'Active Status',
-                                (_user!['is_active'] as bool? ?? false) ? 'Active' : 'Inactive',
+                                (_user!['is_active'] as bool? ?? false)
+                                    ? 'Active'
+                                    : 'Inactive',
                               ),
                               _buildDetailRow(
                                 'Staff Status',
-                                (_user!['is_staff'] as bool? ?? false) ? 'Staff' : 'Non-Staff',
+                                (_user!['is_staff'] as bool? ?? false)
+                                    ? 'Staff'
+                                    : 'Non-Staff',
                               ),
                               _buildDetailRow(
                                 'Superuser Status',
@@ -201,6 +265,27 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                   'Last Login',
                                   _formatDateTime(_user!['last_login']),
                                 ),
+                              const Divider(height: 32),
+                              // Action buttons
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: _deleting ? null : _deleteUser,
+                                  icon: const Icon(Icons.delete),
+                                  label: _deleting
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        )
+                                      : const Text('Delete User'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                    side: const BorderSide(color: Colors.red),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),

@@ -141,4 +141,9 @@ class ApiClient {
     final resp = await _dio.get('/admin/api/users/$userId');
     return (resp.data as Map).cast<String, dynamic>();
   }
+
+  /// Delete a user by ID
+  Future<void> deleteUser(String userId) async {
+    await _dio.delete('/admin/api/users/$userId');
+  }
 }
