@@ -8,7 +8,7 @@ Purpose: establish starting point and naming conventions.
 
 Tasks:
 - Confirm absence/presence of `charts/` and `k8s/` directories; create if missing.
-- Inventory container images to build: backend API, admin/web frontend, worker (background tasks), migrations (job), optional future components.
+- Inventory container images to build: backend API, admin/web frontend, migrations (job). (Worker image deferred until queue system / task processor is finalized.)
 - Decide naming conventions:
   - Release name prefix (e.g., `yab`)
   - Namespaces: `apps`, `ingress`, `observability`, `ops`
@@ -25,10 +25,12 @@ Purpose: produce repeatable, secure base images early to unblock local cluster t
 
 Images (initial set):
 - Backend API (Python) — ASGI server (gunicorn + uvicorn worker assumed; adjust if different).
-- Worker (Python) — same base, alternate entrypoint (Celery/RQ; temporary stub if queue system pending).
 - Admin/Web frontend — Node build → NGINX (static) or Node runtime (SSR) (decide based on framework).
 - Flutter web (optional) — only if shipping web build; builder (Flutter SDK) → NGINX static runtime.
 - Migrations job — reuse backend image with different command (avoid duplicate image).
+
+Deferred:
+- Worker (Python background tasks) — will reuse backend base; to be added when queue/processing stack decided.
 
 Design Guidelines:
 1. Multi-stage builds: builder (dependencies, compile wheels) → slim runtime.
@@ -65,15 +67,19 @@ CMD ["gunicorn", "boilerplate.asgi:application", "-k", "uvicorn.workers.UvicornW
 
 Tasks:
 - Decide placement strategy (colocate vs central `docker/`).
-- Create backend + worker Dockerfiles (worker entrypoint stub if queue not finalized).
+- Create backend Dockerfile; migrations handled via same image + alt command.
+- Create admin/web Dockerfile (static build → NGINX or Node runtime decision).
+- (Optional) Create Flutter web Dockerfile if web distribution confirmed.
 - Add `.dockerignore` (exclude tests, local env files, build artifacts).
-- Add Make targets: `build-api`, `build-worker`, `push-api`, `push-worker` (later integrated into CI).
+- Add Make targets: `build-api`, `build-web`, `push-api`, `push-web` (later integrated into CI).
 - Document environment variables required at runtime (`DATABASE_URL`, `REDIS_URL`, etc.).
+- Record deferral note for worker image and criteria to implement (queue system chosen, scaling strategy defined).
 
 Deliverables:
-- Built local images runnable via `docker run` health endpoint check.
+- Built local images (API + web) runnable via `docker run` health endpoint check.
 - Preliminary size metrics recorded (baseline for future optimization).
 - Updated CI plan to include image build & vulnerability scan (Trivy stub).
+- Worker image deferral documented (criteria + TODO).
 
 ---
 ## 1. Foundational Skeleton
@@ -85,7 +91,7 @@ charts/
   api/
   web/
   admin/
-  worker/
+  # worker/  (deferred)
 k8s/
   base/
     namespaces.yaml
@@ -181,14 +187,14 @@ Deliverables:
 Purpose: predictable scaling behavior & safe rollouts.
 
 Tasks:
-- Add HPA templates (CPU target 70%) for API + worker (enabled via values `autoscaling.enabled`).
+- Add HPA templates (CPU target 70%) for API (worker autoscaling deferred).
 - Liveness/readiness probes defaulted in Deployment template.
-- PodDisruptionBudget (minAvailable: 1) for API/worker.
+- PodDisruptionBudget (minAvailable: 1) for API (worker PDB deferred).
 - Optional anti-affinity topology spread (commented examples).
 
 Deliverables:
 - `helm template` shows HPA & PDB only when enabled.
-- Resource requests/limits baseline recorded in `values.yaml`.
+- Resource requests/limits baseline recorded in `values.yaml` (only API initially; worker to follow).
 
 ---
 ## 7. CI/CD Integration
@@ -252,12 +258,12 @@ Deliverables:
 
 ---
 ## Execution Order (Recommended Sprint Flow)
-1. Phases 0 & 0.5 (baseline + container images) — parallelize scaffolds & image creation.
+1. Phases 0 & 0.5 (baseline + container images) — parallelize scaffolds & image creation (API + web only).
 2. Phase 1 chart skeletons referencing image tags (placeholder SHA values).
 3. Phase 2 local cluster — deploy API using built image.
 4. Phase 3 ingress/TLS scaffolding.
 5. Phase 5 security basics (namespaces, accounts) before observability.
-6. Phase 6 autoscaling templates.
+6. Phase 6 autoscaling templates (API only; worker later).
 7. Phase 7 CI pipeline baseline (image build + manifest validation + smoke tests).
 8. Phase 4 observability (enabled after base stable & security pass).
 9. Phase 9 docs & runbooks.
@@ -319,7 +325,8 @@ api:
 - CI builds & templates charts with no validation errors.
 - Security basics: namespaces + non-default service accounts.
 - Documentation links in place (this file referenced in `04-k8s.md`).
- - Backend & worker images build successfully (non-root, multi-stage) and run health endpoint.
+- Backend API image builds successfully (non-root, multi-stage) and runs health endpoint.
+- Worker image explicitly deferred with documented criteria for introduction.
 
 ---
 Maintain this file as a living roadmap; update phase statuses inline or move completed phases to a changelog section at the bottom if preferred.
