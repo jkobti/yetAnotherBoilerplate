@@ -1,31 +1,24 @@
 /*
   Firebase Cloud Messaging service worker (web push).
   Handles background notifications when the app is not in focus.
+
+  This file is a template. The build script will inject Firebase config at build time.
 */
 
 importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging-compat.js');
 
-const CONFIG_URL = '/env/local.json';
+// Firebase config will be injected here at build time
+const FIREBASE_CONFIG = {"apiKey":"YOUR_KEY","appId":"YOUR_APP_ID","messagingSenderId":"YOUR_SENDER_ID","projectId":"YOUR_PROJECT_ID","authDomain":"YOUR_AUTH_DOMAIN (optional)","storageBucket":"YOUR_STORAGE_BUCKET (optional)"};
 
 async function initFirebaseMessaging() {
   try {
-    const response = await fetch(CONFIG_URL, { cache: 'no-cache' });
-    if (!response.ok) {
-      throw new Error(`Failed to load ${CONFIG_URL}: ${response.status}`);
+    if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.apiKey) {
+      console.error('[firebase-messaging-sw.js] Firebase config not provided');
+      return;
     }
 
-    const env = await response.json();
-    const firebaseConfig = {
-      apiKey: env.FIREBASE_API_KEY,
-      appId: env.FIREBASE_APP_ID,
-      messagingSenderId: env.FIREBASE_MESSAGING_SENDER_ID,
-      projectId: env.FIREBASE_PROJECT_ID,
-      authDomain: env.FIREBASE_AUTH_DOMAIN || undefined,
-      storageBucket: env.FIREBASE_STORAGE_BUCKET || undefined,
-    };
-
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(FIREBASE_CONFIG);
 
     const messaging = firebase.messaging();
     messaging.onBackgroundMessage((payload) => {

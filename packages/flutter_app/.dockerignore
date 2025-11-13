@@ -1,0 +1,15 @@
+build/
+.dart_tool/
+.packages
+pubspec.lock.json
+firebase_app_id_file.json
+.env
+env/*.json
+web/env/
+# VCS & editor
+.git
+.gitignore
+*.iml
+.idea/
+# Tests not needed in image
+test/

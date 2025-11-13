@@ -9,12 +9,18 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="${SCRIPT_DIR}/.."
-ENV_FILE="${APP_DIR}/env/local.json"
+ENV_FILE_INPUT="${1:-}"
+if [[ -n "${ENV_FILE_INPUT}" ]]; then
+  # If caller passes a path, use it directly
+  ENV_FILE="${APP_DIR}/${ENV_FILE_INPUT}"
+else
+  ENV_FILE="${APP_DIR}/env/local.json"
+fi
 TEMPLATE_FILE="${APP_DIR}/web/firebase-messaging-sw.template.js"
 OUTPUT_FILE="${APP_DIR}/web/firebase-messaging-sw.js"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "Warning: ${ENV_FILE} not found. Service worker will be created without Firebase config." >&2
+  echo "[inject_firebase_config] Warning: ${ENV_FILE} not found. Service worker will be created without Firebase config." >&2
   # Create a minimal service worker without Firebase
   cat > "${OUTPUT_FILE}" <<'EOF'
 /*
@@ -45,7 +51,7 @@ PUSH_ENABLED=$(jq -r '.PUSH_NOTIFICATIONS_ENABLED // "false"' "${ENV_FILE}")
 
 if [[ "${PUSH_ENABLED}" != "true" ]] || [[ -z "${FIREBASE_API_KEY}" ]] || [[ -z "${FIREBASE_APP_ID}" ]] || \
    [[ -z "${FIREBASE_MESSAGING_SENDER_ID}" ]] || [[ -z "${FIREBASE_PROJECT_ID}" ]]; then
-  echo "Warning: Push notifications disabled or incomplete Firebase config. Creating minimal service worker." >&2
+  echo "[inject_firebase_config] Warning: Push disabled or incomplete Firebase config in ${ENV_FILE}. Creating minimal service worker." >&2
   # Create a minimal service worker without Firebase
   cat > "${OUTPUT_FILE}" <<'EOF'
 /*
@@ -88,4 +94,4 @@ fi
 
 sed "s|__FIREBASE_CONFIG_PLACEHOLDER__|${FIREBASE_CONFIG}|g" "${TEMPLATE_FILE}" > "${OUTPUT_FILE}"
 
-echo "Injected Firebase config into ${OUTPUT_FILE}"
+echo "[inject_firebase_config] Injected Firebase config from ${ENV_FILE} into ${OUTPUT_FILE}"
