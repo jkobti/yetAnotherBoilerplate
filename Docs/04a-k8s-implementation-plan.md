@@ -6,27 +6,37 @@ Companion to `04-k8s.md`. This document provides an actionable, phased execution
 ## Current Progress Snapshot (Nov 13, 2025)
 Status codes: ✅ complete • 🟡 partial • ⏳ pending • 💤 deferred
 
-- Phase 0 (Baseline Assessment): 🟡 Partial
-  - Backend image decisions made (Python 3.11 slim, Poetry, gunicorn+uvicorn).
-  - Naming conventions drafted (to finalize when charts directory created).
-  - `charts/` and `k8s/` directories not yet created.
-- Phase 0.5 (Container Image Scaffolds): 🟡 Partial
-  - Backend API Dockerfile implemented (`packages/backend/Dockerfile`) multi-stage, non-root, entrypoint script.
-  - `.dockerignore` added; reproducible builds via `poetry.lock`.
-  - Worker image explicitly deferred (queue system TBD) — documented.
-  - Web/admin & Flutter images not started.
-- README Enhancements: ✅ Backend README documents Docker usage, env strategies, persistence & troubleshooting.
-- Next Immediate Focus: Phase 1 chart skeleton (`charts/api`) referencing built backend image tag; create `charts/` + `k8s/` skeleton.
+- Phase 0 (Baseline Assessment): ✅ Complete
+  - Backend technology & image strategy decided (Python 3.11 slim + Poetry + gunicorn/uvicorn).
+  - Naming & namespace conventions drafted (to be codified in initial manifests).
+  - Image tagging approach (future: immutable SHA) noted.
+- Phase 0.5 (Container Image Scaffolds): ✅ Complete (worker deferred)
+  - Backend API Dockerfile implemented (multi-stage, non-root, entrypoint script for dynamic workers).
+  - Customer & Admin Flutter web images implemented (builder → NGINX static) with shared `nginx.default.conf`.
+  - JSON-driven build script (`docker_build_from_env_json.zsh`) supports local/prod config to build images reproducibly.
+  - Service worker Firebase config injection script enhanced; successful embedding verified in both images.
+  - `.dockerignore` added; monorepo path dependency (`ui_kit`) handled via root build context.
+  - Worker image explicitly deferred (queue/system TBD).
+- Documentation: ✅ Backend & Flutter READMEs updated (Docker run, JSON config usage, injection, troubleshooting).
+- Config Strategy: ✅ Build-time `--dart-define` + planned future runtime `config.js` (K8s ConfigMap).
+- Security Hardening: ⏳ Not started (will begin with namespaces + service accounts in Phase 5).
+- CI/CD: ⏳ Placeholder only (image build + helm lint pipeline not yet implemented).
+- Observability: 💤 Deferred (after base charts & security).
 
-Upcoming Tasks (short list):
-1. Scaffold `charts/api` (Chart.yaml, values.yaml, deployment, service) with `enabled` gate.
-2. Create `k8s/base/namespaces.yaml` for `apps`, `ingress`, `observability`.
-3. Add minimal Make targets for image build & `helm template` validation.
-4. Decide web/admin packaging strategy before starting those Dockerfiles.
+Next Immediate Focus: Begin Phase 1 (Foundational Skeleton) — scaffold `charts/api` and `k8s/base/namespaces.yaml`, then template the API chart referencing current backend image tag.
+
+Refined Upcoming Tasks (short list):
+1. Scaffold `charts/api` (Chart.yaml, values.yaml, templates: deployment, service; all gated by `.Values.enabled`).
+2. Add `k8s/base/namespaces.yaml` for `apps`, `ingress`, `observability`.
+3. Add initial Make targets: `make build-api`, `make helm-template-api`, `make kind-up`.
+4. Draft `values.yaml` for API with image repo/tag placeholders, resources, ingress block (disabled initially).
+5. Commit minimal README snippet under `charts/api/README.md` describing values.
+6. Plan web/admin charts (defer until API chart validated; reuse pattern).
 
 Deferred Criteria (Worker Image):
-- Introduce only after selecting queue (e.g., Redis+RQ, Celery+Broker) & defining scaling KPIs.
-- Must include idempotency guarantees & health endpoint.
+- Introduce only after selecting queue (Redis+RQ / Celery / Dramatiq) & defining scaling KPIs.
+- Requires idempotency guarantees & dedicated health/metrics endpoints.
+- Add after baseline autoscaling for API proven.
 
 ---
 ## 0. Baseline Assessment
@@ -342,11 +352,12 @@ api:
 - Worker image explicitly deferred with documented criteria for introduction.
 
 Delta Remaining for MVP:
-- Create initial Helm chart for API and validate template output.
-- Establish local kind cluster config & deploy API.
-- Add ingress manifest (host-based routing) & verify 200 health.
-- Add namespace manifests & serviceAccounts.
-- Integrate image build + helm lint into CI pipeline.
+1. Create initial Helm chart for API and validate template output.
+2. Establish local kind cluster config & deploy API.
+3. Add ingress manifest (host-based routing) & verify 200 health.
+4. Add namespace manifests & serviceAccounts.
+5. Integrate image build + helm lint into CI pipeline.
+6. (Optional early) Add basic HPA template disabled by default.
 
 ---
 Maintain this file as a living roadmap; update phase statuses inline or move completed phases to a changelog section at the bottom if preferred.
