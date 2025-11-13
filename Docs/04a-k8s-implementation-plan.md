@@ -3,6 +3,32 @@
 Companion to `04-k8s.md`. This document provides an actionable, phased execution roadmap for introducing Kubernetes to the monorepo. Treat each phase as incrementally shippable; avoid blocking later hardening on early experimentation.
 
 ---
+## Current Progress Snapshot (Nov 13, 2025)
+Status codes: ✅ complete • 🟡 partial • ⏳ pending • 💤 deferred
+
+- Phase 0 (Baseline Assessment): 🟡 Partial
+  - Backend image decisions made (Python 3.11 slim, Poetry, gunicorn+uvicorn).
+  - Naming conventions drafted (to finalize when charts directory created).
+  - `charts/` and `k8s/` directories not yet created.
+- Phase 0.5 (Container Image Scaffolds): 🟡 Partial
+  - Backend API Dockerfile implemented (`packages/backend/Dockerfile`) multi-stage, non-root, entrypoint script.
+  - `.dockerignore` added; reproducible builds via `poetry.lock`.
+  - Worker image explicitly deferred (queue system TBD) — documented.
+  - Web/admin & Flutter images not started.
+- README Enhancements: ✅ Backend README documents Docker usage, env strategies, persistence & troubleshooting.
+- Next Immediate Focus: Phase 1 chart skeleton (`charts/api`) referencing built backend image tag; create `charts/` + `k8s/` skeleton.
+
+Upcoming Tasks (short list):
+1. Scaffold `charts/api` (Chart.yaml, values.yaml, deployment, service) with `enabled` gate.
+2. Create `k8s/base/namespaces.yaml` for `apps`, `ingress`, `observability`.
+3. Add minimal Make targets for image build & `helm template` validation.
+4. Decide web/admin packaging strategy before starting those Dockerfiles.
+
+Deferred Criteria (Worker Image):
+- Introduce only after selecting queue (e.g., Redis+RQ, Celery+Broker) & defining scaling KPIs.
+- Must include idempotency guarantees & health endpoint.
+
+---
 ## 0. Baseline Assessment
 Purpose: establish starting point and naming conventions.
 
@@ -44,26 +70,12 @@ Directory Placement Options:
 - Colocate: `packages/backend/Dockerfile`, `packages/backend/Dockerfile.worker`, `packages/flutter_app/Dockerfile.web`.
 - Or centralized: `docker/backend/Dockerfile`, etc. (colocation preferred for context minimization).
 
-Initial Backend Dockerfile Sketch (conceptual):
-```
-FROM python:3.12-slim AS builder
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt ./
-RUN pip install --upgrade pip && pip install --prefix /install --no-cache-dir -r requirements.txt
-COPY . .
-
-FROM python:3.12-slim AS runtime
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-WORKDIR /app
-COPY --from=builder /install /usr/local
-COPY . .
-RUN useradd -m app && chown -R app:app /app
-USER app
-EXPOSE 8000
-CMD ["gunicorn", "boilerplate.asgi:application", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
-```
+Backend Dockerfile (Implemented Summary):
+- Base: `python:3.11-slim`
+- Builder stage installs Poetry + dependencies (using `poetry.lock`) and uvicorn.
+- Runtime stage copies built environment, adds entrypoint script invoking gunicorn with uvicorn worker.
+- Non-root `appuser` created; environment variables control `GUNICORN_WORKERS`, bind, module.
+- Troubleshooting & persistence documented in backend README.
 
 Tasks:
 - Decide placement strategy (colocate vs central `docker/`).
@@ -76,7 +88,8 @@ Tasks:
 - Record deferral note for worker image and criteria to implement (queue system chosen, scaling strategy defined).
 
 Deliverables:
-- Built local images (API + web) runnable via `docker run` health endpoint check.
+- Built local backend image runnable via `docker run` health endpoint check (✅ achieved).
+- Built local images (web/admin) runnable (⏳ pending).
 - Preliminary size metrics recorded (baseline for future optimization).
 - Updated CI plan to include image build & vulnerability scan (Trivy stub).
 - Worker image deferral documented (criteria + TODO).
@@ -320,13 +333,20 @@ api:
 
 ---
 ## Completion Criteria for MVP
-- API & web charts deploy locally via kind.
+- API chart deploys locally via kind (web may be optional if frontend served separately initially).
 - Ingress routes traffic to API (200 health endpoint).
 - CI builds & templates charts with no validation errors.
 - Security basics: namespaces + non-default service accounts.
 - Documentation links in place (this file referenced in `04-k8s.md`).
-- Backend API image builds successfully (non-root, multi-stage) and runs health endpoint.
+- Backend API image builds successfully (non-root, multi-stage) and runs health endpoint (✅ met).
 - Worker image explicitly deferred with documented criteria for introduction.
+
+Delta Remaining for MVP:
+- Create initial Helm chart for API and validate template output.
+- Establish local kind cluster config & deploy API.
+- Add ingress manifest (host-based routing) & verify 200 health.
+- Add namespace manifests & serviceAccounts.
+- Integrate image build + helm lint into CI pipeline.
 
 ---
 Maintain this file as a living roadmap; update phase statuses inline or move completed phases to a changelog section at the bottom if preferred.
