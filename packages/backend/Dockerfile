@@ -24,13 +24,11 @@ RUN apt-get update \
 RUN pip install --upgrade pip \
     && pip install poetry==1.8.3
 
-# Copy only dependency manifest first for layer caching
-COPY pyproject.toml ./
-# If/when poetry.lock exists, copy it too for locked builds
-# COPY poetry.lock ./
+# Copy dependency manifests (pyproject + lock) first for layer caching
+COPY pyproject.toml poetry.lock ./
 
-# Install production dependencies (main group only)
-RUN poetry install --only main --no-root || echo "Warning: poetry.lock missing; dependencies not pinned."
+# Install production dependencies (main group only) using pinned lock
+RUN poetry install --only main --no-root
 # Ensure optional uvicorn dependency present for ASGI worker
 RUN pip install uvicorn
 
