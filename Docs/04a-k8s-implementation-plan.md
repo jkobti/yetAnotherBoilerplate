@@ -17,26 +17,23 @@ Status codes: ✅ complete • 🟡 partial • ⏳ pending • 💤 deferred
   - Service worker Firebase config injection script enhanced; successful embedding verified in both images.
   - `.dockerignore` added; monorepo path dependency (`ui_kit`) handled via root build context.
   - Worker image explicitly deferred (queue/system TBD).
-- Documentation: ✅ Backend & Flutter READMEs updated (Docker run, JSON config usage, injection, troubleshooting).
+- Phase 1 (Foundational Skeleton): ✅ Complete
+  - `charts/api` scaffolded with Chart.yaml, values.yaml, deployment.yaml, service.yaml, _helpers.tpl.
+  - All resources gated by `.Values.enabled` flag.
+  - `k8s/base/namespaces.yaml` created with `apps`, `ingress`, `observability` namespaces.
+  - Makefile targets added: `build-api`, `helm-template-api`, `kind-up`, `kind-down`, `deploy-local`.
+  - `k8s/kind-config.yaml` configured with extraPortMappings (API 8000, web 8080, ingress 80/443).
+  - Local kind cluster (`yab-local`) created and running.
+  - API Helm chart deployed to `apps` namespace; pod healthy and passing readiness probes.
+  - Health endpoint validated at `/health/` (trailing slash).
+- Documentation: ✅ Backend & Flutter READMEs updated; `charts/api/README.md` with quick-start, parameters, examples, troubleshooting.
 - Config Strategy: ✅ Build-time `--dart-define` + planned future runtime `config.js` (K8s ConfigMap).
 - Security Hardening: ⏳ Not started (will begin with namespaces + service accounts in Phase 5).
 - CI/CD: ⏳ Placeholder only (image build + helm lint pipeline not yet implemented).
 - Observability: 💤 Deferred (after base charts & security).
+- Web/Admin Charts: ⏳ Deferred until API chart validated locally (✅ validated); scaffold pattern ready to reuse.
 
-Next Immediate Focus: Begin Phase 1 (Foundational Skeleton) — scaffold `charts/api` and `k8s/base/namespaces.yaml`, then template the API chart referencing current backend image tag.
-
-Refined Upcoming Tasks (short list):
-1. Scaffold `charts/api` (Chart.yaml, values.yaml, templates: deployment, service; all gated by `.Values.enabled`).
-2. Add `k8s/base/namespaces.yaml` for `apps`, `ingress`, `observability`.
-3. Add initial Make targets: `make build-api`, `make helm-template-api`, `make kind-up`.
-4. Draft `values.yaml` for API with image repo/tag placeholders, resources, ingress block (disabled initially).
-5. Commit minimal README snippet under `charts/api/README.md` describing values.
-6. Plan web/admin charts (defer until API chart validated; reuse pattern).
-
-Deferred Criteria (Worker Image):
-- Introduce only after selecting queue (Redis+RQ / Celery / Dramatiq) & defining scaling KPIs.
-- Requires idempotency guarantees & dedicated health/metrics endpoints.
-- Add after baseline autoscaling for API proven.
+Next Immediate Focus: Decide on web/admin chart scaffolding, then Phase 2 (Ingress & TLS) or Phase 3 (Observability) depending on priority.
 
 ---
 ## 0. Baseline Assessment
@@ -281,16 +278,18 @@ Deliverables:
 
 ---
 ## Execution Order (Recommended Sprint Flow)
-1. Phases 0 & 0.5 (baseline + container images) — parallelize scaffolds & image creation (API + web only).
-2. Phase 1 chart skeletons referencing image tags (placeholder SHA values).
-3. Phase 2 local cluster — deploy API using built image.
-4. Phase 3 ingress/TLS scaffolding.
-5. Phase 5 security basics (namespaces, accounts) before observability.
-6. Phase 6 autoscaling templates (API only; worker later).
-7. Phase 7 CI pipeline baseline (image build + manifest validation + smoke tests).
-8. Phase 4 observability (enabled after base stable & security pass).
-9. Phase 9 docs & runbooks.
-10. Phase 10 risk register formalization.
+1. ✅ Phases 0 & 0.5 (baseline + container images) — complete.
+2. ✅ Phase 1 chart skeletons referencing image tags — complete; API chart deployed locally.
+3. ✅ Phase 2 local cluster — kind cluster created and operational.
+4. ⏳ Phase 3 ingress/TLS scaffolding (next priority if external access needed).
+5. ⏳ Phase 5 security basics (namespaces ✅ created; service accounts + RBAC pending).
+6. ⏳ Phase 6 autoscaling templates (disabled by default; ready to enable).
+7. ⏳ Phase 7 CI pipeline baseline (image build + manifest validation + smoke tests).
+8. ⏳ Phase 4 observability (enabled after base stable & security pass).
+9. ⏳ Phase 9 docs & runbooks.
+10. ⏳ Phase 10 risk register formalization.
+
+Current State: Phase 1 MVP achieved locally. Next decision point: Phase 2 (ingress) or Phase 7 (CI) or scaffold web/admin charts.
 
 ---
 ## Minimal Helm values Example (API)
@@ -343,21 +342,26 @@ api:
 
 ---
 ## Completion Criteria for MVP
-- API chart deploys locally via kind (web may be optional if frontend served separately initially).
-- Ingress routes traffic to API (200 health endpoint).
-- CI builds & templates charts with no validation errors.
-- Security basics: namespaces + non-default service accounts.
-- Documentation links in place (this file referenced in `04-k8s.md`).
-- Backend API image builds successfully (non-root, multi-stage) and runs health endpoint (✅ met).
-- Worker image explicitly deferred with documented criteria for introduction.
+- ✅ API chart deploys locally via kind (chart scaffolded, deployed, pod healthy).
+- ✅ Health endpoint responds correctly (`/health/` returns 200 OK).
+- ⏳ Ingress routes traffic to API (pending Phase 2 implementation).
+- ⏳ CI builds & templates charts with no validation errors (pending Phase 7).
+- ✅ Security basics: namespaces created + ready for service accounts.
+- ✅ Documentation links in place (this file updated; chart README complete).
+- ✅ Backend API image builds successfully (non-root, multi-stage) and runs health endpoint.
+- ✅ Worker image explicitly deferred with documented criteria for introduction.
 
-Delta Remaining for MVP:
-1. Create initial Helm chart for API and validate template output.
-2. Establish local kind cluster config & deploy API.
-3. Add ingress manifest (host-based routing) & verify 200 health.
-4. Add namespace manifests & serviceAccounts.
-5. Integrate image build + helm lint into CI pipeline.
-6. (Optional early) Add basic HPA template disabled by default.
+Phase 1 MVP Achievement:
+- ✅ Helm chart structure proven locally.
+- ✅ kind cluster operational with port mappings.
+- ✅ API pod deployed and healthy.
+- ✅ Pattern established for web/admin chart reuse.
+
+Delta Remaining for Full MVP:
+1. ⏳ Enable Ingress & test external routing (Phase 2).
+2. ⏳ Add basic observability scaffolding if prioritized (Phase 4).
+3. ⏳ Integrate image build + helm lint into CI pipeline (Phase 7).
+4. ⏳ Scaffold web/admin charts following API pattern (Phase 1 extension).
 
 ---
 Maintain this file as a living roadmap; update phase statuses inline or move completed phases to a changelog section at the bottom if preferred.

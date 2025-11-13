@@ -1,0 +1,19 @@
+# Common VCS dirs
+.git/
+.gitignore
+
+# Editor configs
+*.swp
+*.bak
+.idea/
+.vscode/
+
+# Test & build artifacts
+coverage/
+*.pyc
+__pycache__/
+node_modules/
+
+# Local env files
+.env
+.env.*

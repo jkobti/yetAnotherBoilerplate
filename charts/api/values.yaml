@@ -1,0 +1,76 @@
+# Default values for api chart.
+# These can be overridden via --values or --set.
+
+# Global enable flag for the entire deployment
+enabled: true
+
+# Container image configuration
+image:
+  # Repository for the backend API image
+  # For local development: yetanotherboilerplate/api
+  # For production: ghcr.io/jkobti/yetanotherboilerplate/api
+  repository: yetanotherboilerplate/api
+  # Image tag or sha
+  tag: dev
+  # Image pull policy: IfNotPresent (local), Always (registry)
+  pullPolicy: IfNotPresent
+
+# Number of replicas
+replicaCount: 1
+
+# Kubernetes Service configuration
+service:
+  type: ClusterIP
+  port: 8000
+
+# Pod-level annotations (e.g., for Prometheus scraping)
+podAnnotations: {}
+
+# Resource requests and limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Ingress configuration (disabled by default; enable for routing)
+ingress:
+  enabled: false
+  className: nginx
+  annotations:
+    # cert-manager.io/cluster-issuer: letsencrypt-staging
+  hosts:
+    - host: api.local.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: api-tls
+    #   hosts:
+    #     - api.local.dev
+
+# Horizontal Pod Autoscaler configuration (disabled by default)
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+# Standard Kubernetes labels
+labels:
+  app.kubernetes.io/part-of: yetanotherboilerplate
+  app.kubernetes.io/component: api
+
+# Image pull secrets for private registries
+imagePullSecrets: []
+
+# Node scheduling constraints
+nodeSelector: {}
+
+# Pod tolerations (e.g., for taints)
+tolerations: []
+
+# Pod affinity rules
+affinity: {}

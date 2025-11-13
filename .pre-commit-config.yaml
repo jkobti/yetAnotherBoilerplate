@@ -10,6 +10,7 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-yaml
+        exclude: ^(charts|k8s)/  # Exclude Helm templates and k8s manifests (multi-doc YAML)
       - id: check-json
       - id: check-toml
 
@@ -33,5 +34,6 @@ repos:
         name: prettier
         args: ["--write", "--ignore-unknown"]
         files: '\\.(md|mdx|json|ya?ml)$'
+        exclude: ^(charts|k8s)/  # Exclude Helm templates and k8s manifests
         additional_dependencies:
           - prettier@3.3.3

@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps
+  labels:
+    name: apps
+    part-of: yetanotherboilerplate
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress
+  labels:
+    name: ingress
+    part-of: yetanotherboilerplate
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    name: observability
+    part-of: yetanotherboilerplate

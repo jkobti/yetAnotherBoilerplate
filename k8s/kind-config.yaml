@@ -1,0 +1,26 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: yab-local
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # API service port mapping
+      - containerPort: 8000
+        hostPort: 8000
+        listenAddress: "127.0.0.1"
+        protocol: TCP
+      # Web service port mapping
+      - containerPort: 8080
+        hostPort: 8080
+        listenAddress: "127.0.0.1"
+        protocol: TCP
+      # Ingress HTTP (if using NGINX controller)
+      - containerPort: 80
+        hostPort: 80
+        listenAddress: "127.0.0.1"
+        protocol: TCP
+      # Ingress HTTPS (if using NGINX controller)
+      - containerPort: 443
+        hostPort: 443
+        listenAddress: "127.0.0.1"
+        protocol: TCP
