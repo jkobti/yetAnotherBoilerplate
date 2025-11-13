@@ -39,6 +39,79 @@ poetry run python manage.py createsuperuser --email admin@example.com
 poetry run python manage.py runserver 0.0.0.0:8000
 ```
 
+## Container (Docker) Usage
+
+Build the image (from repo root or this directory):
+
+```zsh
+docker build -f packages/backend/Dockerfile packages/backend -t yetanotherboilerplate/backend:dev
+```
+
+Run the API container (SQLite fallback if `DATABASE_URL` not set):
+
+```zsh
+docker run --rm -p 8000:8000 \
+	-e DJANGO_SETTINGS_MODULE=boilerplate.settings \
+	yetanotherboilerplate/backend:dev
+```
+
+With Postgres (example):
+
+```zsh
+export DATABASE_URL="postgres://user:pass@localhost:5432/appdb"
+docker run --rm -p 8000:8000 \
+	-e DJANGO_SETTINGS_MODULE=boilerplate.settings \
+	-e DATABASE_URL="$DATABASE_URL" \
+	yetanotherboilerplate/backend:dev
+```
+
+Run migrations using the same image (one-off):
+
+```zsh
+docker run --rm \
+	-e DJANGO_SETTINGS_MODULE=boilerplate.settings \
+	-e DATABASE_URL="$DATABASE_URL" \
+	yetanotherboilerplate/backend:dev \
+	python manage.py migrate
+```
+
+Create a superuser:
+
+```zsh
+docker run --rm -it \
+	-e DJANGO_SETTINGS_MODULE=boilerplate.settings \
+	-e DATABASE_URL="$DATABASE_URL" \
+	yetanotherboilerplate/backend:dev \
+	python manage.py createsuperuser --email admin@example.com
+```
+
+Customize gunicorn worker count & bind address:
+
+```zsh
+docker run --rm -p 8000:8000 \
+	-e GUNICORN_WORKERS=4 -e GUNICORN_BIND=0.0.0.0:8000 \
+	yetanotherboilerplate/backend:dev
+```
+
+Mount source for quick local iteration (not production):
+
+```zsh
+docker run --rm -p 8000:8000 \
+	-v "$PWD/packages/backend":/app \
+	-e DJANGO_SETTINGS_MODULE=boilerplate.settings \
+	yetanotherboilerplate/backend:dev
+```
+
+Health check (adjust path if needed):
+
+```zsh
+curl -i http://localhost:8000/health/
+```
+
+Recommended next steps:
+- Add a `poetry.lock` to speed/lock image builds.
+- Introduce a dedicated migrations job in Helm using this same image.
+
 Endpoints (dev defaults):
 
 - Health: http://localhost:8000/health/
