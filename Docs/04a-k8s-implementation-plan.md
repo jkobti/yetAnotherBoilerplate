@@ -17,15 +17,19 @@ Status codes: ✅ complete • 🟡 partial • ⏳ pending • 💤 deferred
   - Service worker Firebase config injection script enhanced; successful embedding verified in both images.
   - `.dockerignore` added; monorepo path dependency (`ui_kit`) handled via root build context.
   - Worker image explicitly deferred (queue/system TBD).
-- Phase 1 (Foundational Skeleton): ✅ Complete
+- Phase 1 (Foundational Skeleton): ✅ Complete (Extended)
   - `charts/api` scaffolded with Chart.yaml, values.yaml, deployment.yaml, service.yaml, _helpers.tpl.
+  - `charts/web` scaffolded following API chart pattern (Flutter web → NGINX).
+  - `charts/admin` scaffolded following API chart pattern (Flutter web → NGINX).
   - All resources gated by `.Values.enabled` flag.
   - `k8s/base/namespaces.yaml` created with `apps`, `ingress`, `observability` namespaces.
-  - Makefile targets added: `build-api`, `helm-template-api`, `kind-up`, `kind-down`, `deploy-local`.
+  - Makefile targets added: `build-api`, `build-web`, `build-admin`, `helm-template-*`, `kind-up`, `kind-down`, `deploy-local`, `deploy-web`, `deploy-admin`.
   - `k8s/kind-config.yaml` configured with extraPortMappings (API 8000, web 8080, ingress 80/443).
   - Local kind cluster (`yab-local`) created and running.
   - API Helm chart deployed to `apps` namespace; pod healthy and passing readiness probes.
   - Health endpoint validated at `/health/` (trailing slash).
+  - ServiceAccounts created for api, worker, web, admin in `k8s/base/serviceaccounts.yaml`.
+  - Web & admin charts ready to deploy (disabled by default; enable with `--set enabled=true`).
 - Phase 2 (Local Development): ✅ Complete (achieved as part of Phase 1)
   - Local kind cluster operational with API deployment working.
 - Phase 3 (Ingress & TLS): ✅ Complete (with local limitation documented)
@@ -37,20 +41,20 @@ Status codes: ✅ complete • 🟡 partial • ⏳ pending • 💤 deferred
   - `k8s/base/LOCAL_INGRESS_SETUP.md` comprehensive guide with cloud deployment instructions and kind limitation workaround (use `kubectl port-forward` locally).
   - Production-ready: Ingress pattern works on cloud clusters (GKE, EKS) without modification.
 - Phase 5 (Security & Config Management): ✅ Complete
-  - ServiceAccounts created: `api` (apps), `worker` (apps), `observability` (observability) in `k8s/base/serviceaccounts.yaml`.
+  - ServiceAccounts created: `api` (apps), `worker` (apps), `web` (apps), `admin` (apps), `observability` (observability) in `k8s/base/serviceaccounts.yaml`.
   - NetworkPolicies defined: default-deny-ingress (apps), allow-ingress-to-api, allow-observability-scrape.
-  - Secret naming convention documented (api-env, worker-env, obs-env).
-  - API Helm chart updated: ServiceAccountName reference, envFrom for secret injection, secrets config block in values.yaml.
-  - Makefile targets: `create-secrets` (local dev), `apply-network-policies`.
+  - Secret naming convention documented (api-env, worker-env, web-env, admin-env, obs-env).
+  - API, web, and admin Helm charts updated: ServiceAccountName reference, envFrom for secret injection, secrets config block in values.yaml.
+  - Makefile targets: `create-secrets` (local dev, now creates api-env, web-env, admin-env), `apply-network-policies`.
   - Comprehensive `k8s/base/SECURITY.md` guide covering secret strategies (K8s Secrets local, SealedSecrets/ESO for staging/prod).
   - Future RBAC, audit logging, PSS, and OPA policies documented with implementation trigger conditions.
 - Documentation: ✅ Backend & Flutter READMEs updated; `charts/api/README.md` with quick-start, parameters, examples, troubleshooting. Ingress/TLS setup guides complete. Security guide added.
 - Config Strategy: ✅ Build-time `--dart-define` + planned future runtime `config.js` (K8s ConfigMap).
 - CI/CD: ⏳ Placeholder only (Phase 7: image build + helm lint pipeline not yet implemented).
 - Observability: 💤 Deferred (Phase 4, after base charts & security).
-- Web/Admin Charts: ⏳ Deferred until API chart validated locally (✅ validated); scaffold pattern ready to reuse.
+- Web/Admin Charts: ✅ Scaffolded (Phase 1 extension; disabled by default; ready for `make deploy-web` / `make deploy-admin`).
 
-Next Immediate Focus: Phase 7 (CI/CD pipeline) or scaffold web/admin charts. Phase 6 (autoscaling) templates ready if prioritized.
+Next Immediate Focus: Phase 7 (CI/CD pipeline) or Phase 6 (autoscaling templates). Web/admin charts ready to enable locally.
 
 ---
 ## 0. Baseline Assessment
@@ -360,25 +364,26 @@ api:
 ---
 ## Completion Criteria for MVP
 - ✅ API chart deploys locally via kind (chart scaffolded, deployed, pod healthy).
+- ✅ Web & admin charts scaffolded and ready to deploy (disabled by default).
 - ✅ Health endpoint responds correctly (`/health/` returns 200 OK).
-- ⏳ Ingress routes traffic to API (pending Phase 2 implementation).
+- ⏳ Ingress routes traffic to API (pending Phase 3 implementation).
 - ⏳ CI builds & templates charts with no validation errors (pending Phase 7).
-- ✅ Security basics: namespaces created + ready for service accounts.
-- ✅ Documentation links in place (this file updated; chart README complete).
+- ✅ Security basics: namespaces created + ServiceAccounts for all services.
+- ✅ Documentation links in place (chart READMEs complete; DEPLOYMENT.md updated).
 - ✅ Backend API image builds successfully (non-root, multi-stage) and runs health endpoint.
 - ✅ Worker image explicitly deferred with documented criteria for introduction.
 
 Phase 1 MVP Achievement:
-- ✅ Helm chart structure proven locally.
+- ✅ Helm chart structure proven locally (API deployed, web/admin scaffolded).
 - ✅ kind cluster operational with port mappings.
 - ✅ API pod deployed and healthy.
-- ✅ Pattern established for web/admin chart reuse.
+- ✅ Pattern established and replicated for web/admin charts.
 
 Delta Remaining for Full MVP:
-1. ⏳ Enable Ingress & test external routing (Phase 2).
-2. ⏳ Add basic observability scaffolding if prioritized (Phase 4).
-3. ⏳ Integrate image build + helm lint into CI pipeline (Phase 7).
-4. ⏳ Scaffold web/admin charts following API pattern (Phase 1 extension).
+1. ⏳ Build web/admin Docker images and test deployment locally (Phase 0.5 → 1 link).
+2. ⏳ Enable Ingress & test external routing (Phase 3).
+3. ⏳ Add basic observability scaffolding if prioritized (Phase 4).
+4. ⏳ Integrate image build + helm lint into CI pipeline (Phase 7).
 
 ---
 Maintain this file as a living roadmap; update phase statuses inline or move completed phases to a changelog section at the bottom if preferred.

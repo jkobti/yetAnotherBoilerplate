@@ -161,6 +161,31 @@ Expected output:
 Readiness:      http-get http://:8000/health/ delay=10s timeout=5s period=10s #success=1 #failure=3
 ```
 
+#### 6. Deploy Web & Admin Frontends (Optional)
+
+The web and admin frontends are optional and **disabled by default**. Deploy them using the same pattern:
+
+```bash
+# Build and deploy web frontend
+make build-web
+make deploy-web
+
+# Build and deploy admin frontend
+make build-admin
+make deploy-admin
+
+# Verify all pods are running
+kubectl get pods -n apps
+```
+
+Expected output:
+```
+NAME                      READY   STATUS    RESTARTS   AGE
+api-api-5d4f8c9bx        1/1     Running   0          2m
+web-web-7e4f2c1ay        1/1     Running   0          30s
+admin-admin-3k8f9c2bz    1/1     Running   0          30s
+```
+
 ---
 
 ## Access Patterns
@@ -173,16 +198,26 @@ Use `kubectl port-forward` to access services locally. This works reliably on al
 # Forward API to localhost:8000
 kubectl port-forward -n apps svc/api-api 8000:8000
 
-# In another terminal, test the API
-curl http://localhost:8000/health/
+# Forward web frontend to localhost:8080
+kubectl port-forward -n apps svc/web-web 8080:80
+
+# Forward admin frontend to localhost:8081
+kubectl port-forward -n apps svc/admin-admin 8081:80
+
+# In another terminal, test the services
+curl http://localhost:8000/health/    # API health check
+curl http://localhost:8080/           # Web frontend
+curl http://localhost:8081/           # Admin frontend
 ```
 
-Expected response:
-```json
-{"status": "ok"}
+Expected responses:
+```
+API:     {"status": "ok"}
+Web:     <HTML content of web app>
+Admin:   <HTML content of admin app>
 ```
 
-Keep the port-forward terminal open while developing.
+Keep the port-forward terminal(s) open while developing.
 
 ### Option B: Ingress (Production Pattern, Local Setup)
 
@@ -212,16 +247,18 @@ nginx-ingress-controller-7d8f7c9bx-xyz   1/1     Running   0   30s
 make setup-local-dns
 ```
 
-This adds `api.local.dev` to `/etc/hosts` (requires sudo password prompt).
+This adds `api.local.dev`, `app.local.dev`, and `admin.local.dev` to `/etc/hosts` (requires sudo password prompt).
 
 Verify:
 ```bash
-cat /etc/hosts | grep api.local.dev
+cat /etc/hosts | grep local.dev
 ```
 
 Expected output:
 ```
 127.0.0.1 api.local.dev
+127.0.0.1 app.local.dev
+127.0.0.1 admin.local.dev
 ```
 
 #### Deploy Ingress
@@ -419,9 +456,12 @@ sudo sed -i '' '/api.local.dev/d' /etc/hosts
 ## Next Steps
 
 - **Configure Ingress/TLS**: See `k8s/base/LOCAL_INGRESS_SETUP.md` for production setup
-- **Customize API Chart**: See `charts/api/README.md` for Helm values and templating
-- **Add More Services**: Follow the same pattern for web/admin frontends
+- **Customize Charts**:
+  - API: `charts/api/README.md`
+  - Web Frontend: `charts/web/README.md`
+  - Admin Frontend: `charts/admin/README.md`
 - **Setup Observability**: Phase 4—Prometheus/Grafana (pending)
+- **CI/CD Integration**: Phase 7—automated image builds and deployments
 
 ---
 
@@ -429,6 +469,8 @@ sudo sed -i '' '/api.local.dev/d' /etc/hosts
 
 - **Kubernetes Plan**: `Docs/04a-k8s-implementation-plan.md`
 - **API Chart Reference**: `charts/api/README.md`
+- **Web Chart Reference**: `charts/web/README.md`
+- **Admin Chart Reference**: `charts/admin/README.md`
 - **Ingress & TLS Setup**: `k8s/base/LOCAL_INGRESS_SETUP.md`
 - **Backend API**: `packages/backend/README.md`
 - **Flutter Frontend**: `packages/flutter_app/README.md`

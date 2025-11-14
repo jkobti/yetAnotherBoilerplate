@@ -1,15 +1,21 @@
-.PHONY: help build-api helm-template-api kind-up kind-down deploy-local install-nginx deploy-ingress setup-local-dns create-secrets apply-network-policies
+.PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin kind-up kind-down deploy-local deploy-web deploy-admin install-nginx deploy-ingress setup-local-dns create-secrets apply-network-policies
 
 help:
 	@echo "Available targets:"
 	@echo "  build-api              Build backend API Docker image locally"
+	@echo "  build-web              Build web frontend Docker image locally"
+	@echo "  build-admin            Build admin frontend Docker image locally"
 	@echo "  helm-template-api      Render API Helm chart templates"
+	@echo "  helm-template-web      Render web Helm chart templates"
+	@echo "  helm-template-admin    Render admin Helm chart templates"
 	@echo "  kind-up                Create local kind cluster"
 	@echo "  kind-down              Destroy local kind cluster"
 	@echo "  deploy-local           Deploy API chart to local kind cluster"
+	@echo "  deploy-web             Deploy web chart to local kind cluster"
+	@echo "  deploy-admin           Deploy admin chart to local kind cluster"
 	@echo "  install-nginx          Install NGINX ingress controller to kind cluster"
 	@echo "  deploy-ingress         Enable ingress on API chart and deploy"
-	@echo "  setup-local-dns        Add api.local.dev to /etc/hosts (requires sudo)"
+	@echo "  setup-local-dns        Add *.local.dev entries to /etc/hosts (requires sudo)"
 	@echo "  create-secrets         Create Kubernetes Secrets for local development"
 	@echo "  apply-network-policies Apply NetworkPolicies to clusters"
 
@@ -18,10 +24,50 @@ build-api:
 	@echo "Building backend API image..."
 	docker build -f packages/backend/Dockerfile -t yetanotherboilerplate/api:dev packages/backend
 
+# Build web frontend image (Flutter web → NGINX)
+# Pass API_BASE_URL as build arg (default: http://localhost:8000 for local port-forward access)
+# Use repo root as build context (.) so Dockerfile can reference monorepo paths
+build-web:
+	@echo "Building web frontend image..."
+	@if [ -f packages/flutter_app/Dockerfile.web ]; then \
+		docker build -f packages/flutter_app/Dockerfile.web \
+			--build-arg API_BASE_URL="http://localhost:8000" \
+			--build-arg PUSH_NOTIFICATIONS_ENABLED="false" \
+			-t yetanotherboilerplate/web:dev .; \
+	else \
+		echo "Error: Dockerfile.web not found at packages/flutter_app/Dockerfile.web"; \
+		exit 1; \
+	fi
+
+# Build admin frontend image (Flutter web → NGINX)
+# Pass API_BASE_URL as build arg (default: http://localhost:8000 for local port-forward access)
+# Use repo root as build context (.) so Dockerfile can reference monorepo paths
+build-admin:
+	@echo "Building admin frontend image..."
+	@if [ -f packages/flutter_app/Dockerfile.admin.web ]; then \
+		docker build -f packages/flutter_app/Dockerfile.admin.web \
+			--build-arg API_BASE_URL="http://localhost:8000" \
+			--build-arg PUSH_NOTIFICATIONS_ENABLED="false" \
+			-t yetanotherboilerplate/admin:dev .; \
+	else \
+		echo "Error: Dockerfile.admin.web not found at packages/flutter_app/Dockerfile.admin.web"; \
+		exit 1; \
+	fi
+
 # Template the API Helm chart
 helm-template-api:
 	@echo "Rendering API Helm chart..."
 	helm template yab-api charts/api
+
+# Template the web Helm chart
+helm-template-web:
+	@echo "Rendering web Helm chart..."
+	helm template yab-web charts/web
+
+# Template the admin Helm chart
+helm-template-admin:
+	@echo "Rendering admin Helm chart..."
+	helm template yab-admin charts/admin
 
 # Create a local kind cluster
 kind-up:
@@ -44,6 +90,32 @@ deploy-local: build-api
 		--set image.tag=dev \
 		--set image.pullPolicy=Never
 	@echo "✓ API deployed. Check status with: kubectl get pods -n apps"
+
+# Deploy web chart to local cluster
+deploy-web: build-web
+	@echo "Deploying namespaces..."
+	kubectl apply -f k8s/base/namespaces.yaml
+	@echo "Deploying web chart to 'apps' namespace..."
+	helm install yab-web charts/web \
+		--namespace apps \
+		--set enabled=true \
+		--set image.repository=yetanotherboilerplate/web \
+		--set image.tag=dev \
+		--set image.pullPolicy=Never
+	@echo "✓ Web deployed. Check status with: kubectl get pods -n apps"
+
+# Deploy admin chart to local cluster
+deploy-admin: build-admin
+	@echo "Deploying namespaces..."
+	kubectl apply -f k8s/base/namespaces.yaml
+	@echo "Deploying admin chart to 'apps' namespace..."
+	helm install yab-admin charts/admin \
+		--namespace apps \
+		--set enabled=true \
+		--set image.repository=yetanotherboilerplate/admin \
+		--set image.tag=dev \
+		--set image.pullPolicy=Never
+	@echo "✓ Admin deployed. Check status with: kubectl get pods -n apps"
 
 # Install NGINX ingress controller to local kind cluster
 install-nginx:
@@ -74,12 +146,24 @@ deploy-ingress:
 
 # Add local DNS entries (requires sudo)
 setup-local-dns:
-	@echo "Adding api.local.dev to /etc/hosts..."
+	@echo "Adding *.local.dev entries to /etc/hosts..."
 	@if grep -q "api.local.dev" /etc/hosts; then \
 		echo "✓ api.local.dev already in /etc/hosts"; \
 	else \
 		echo "127.0.0.1 api.local.dev" | sudo tee -a /etc/hosts > /dev/null; \
 		echo "✓ Added api.local.dev to /etc/hosts"; \
+	fi
+	@if grep -q "app.local.dev" /etc/hosts; then \
+		echo "✓ app.local.dev already in /etc/hosts"; \
+	else \
+		echo "127.0.0.1 app.local.dev" | sudo tee -a /etc/hosts > /dev/null; \
+		echo "✓ Added app.local.dev to /etc/hosts"; \
+	fi
+	@if grep -q "admin.local.dev" /etc/hosts; then \
+		echo "✓ admin.local.dev already in /etc/hosts"; \
+	else \
+		echo "127.0.0.1 admin.local.dev" | sudo tee -a /etc/hosts > /dev/null; \
+		echo "✓ Added admin.local.dev to /etc/hosts"; \
 	fi
 
 # Create Kubernetes Secrets for local development
@@ -95,6 +179,20 @@ create-secrets:
 		-n apps \
 		--dry-run=client -o yaml | kubectl apply -f -
 	@echo "✓ api-env Secret created/updated."
+	@echo "Creating web-env Secret in apps namespace..."
+	kubectl create secret generic web-env \
+		--from-literal=API_URL="http://api.local.dev" \
+		--from-literal=DEBUG="false" \
+		-n apps \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@echo "✓ web-env Secret created/updated."
+	@echo "Creating admin-env Secret in apps namespace..."
+	kubectl create secret generic admin-env \
+		--from-literal=API_URL="http://api.local.dev" \
+		--from-literal=DEBUG="false" \
+		-n apps \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@echo "✓ admin-env Secret created/updated."
 
 # Apply NetworkPolicies to local cluster
 # Note: Requires CNI plugin supporting NetworkPolicies (e.g., Calico).
