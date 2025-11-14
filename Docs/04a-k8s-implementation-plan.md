@@ -36,14 +36,21 @@ Status codes: ✅ complete • 🟡 partial • ⏳ pending • 💤 deferred
   - `k8s/base/cert-issuers/` directory with README and issuer manifests (local-selfsigned, letsencrypt-staging, letsencrypt-prod).
   - `k8s/base/LOCAL_INGRESS_SETUP.md` comprehensive guide with cloud deployment instructions and kind limitation workaround (use `kubectl port-forward` locally).
   - Production-ready: Ingress pattern works on cloud clusters (GKE, EKS) without modification.
-- Documentation: ✅ Backend & Flutter READMEs updated; `charts/api/README.md` with quick-start, parameters, examples, troubleshooting. Ingress/TLS setup guides complete.
+- Phase 5 (Security & Config Management): ✅ Complete
+  - ServiceAccounts created: `api` (apps), `worker` (apps), `observability` (observability) in `k8s/base/serviceaccounts.yaml`.
+  - NetworkPolicies defined: default-deny-ingress (apps), allow-ingress-to-api, allow-observability-scrape.
+  - Secret naming convention documented (api-env, worker-env, obs-env).
+  - API Helm chart updated: ServiceAccountName reference, envFrom for secret injection, secrets config block in values.yaml.
+  - Makefile targets: `create-secrets` (local dev), `apply-network-policies`.
+  - Comprehensive `k8s/base/SECURITY.md` guide covering secret strategies (K8s Secrets local, SealedSecrets/ESO for staging/prod).
+  - Future RBAC, audit logging, PSS, and OPA policies documented with implementation trigger conditions.
+- Documentation: ✅ Backend & Flutter READMEs updated; `charts/api/README.md` with quick-start, parameters, examples, troubleshooting. Ingress/TLS setup guides complete. Security guide added.
 - Config Strategy: ✅ Build-time `--dart-define` + planned future runtime `config.js` (K8s ConfigMap).
-- Security Hardening: ⏳ Not started (Phase 5: RBAC, NetworkPolicies, ServiceAccounts).
 - CI/CD: ⏳ Placeholder only (Phase 7: image build + helm lint pipeline not yet implemented).
 - Observability: 💤 Deferred (Phase 4, after base charts & security).
 - Web/Admin Charts: ⏳ Deferred until API chart validated locally (✅ validated); scaffold pattern ready to reuse.
 
-Next Immediate Focus: Phase 5 (Security basics) or Phase 7 (CI/CD). Web/Admin charts follow after core patterns stabilize.
+Next Immediate Focus: Phase 7 (CI/CD pipeline) or scaffold web/admin charts. Phase 6 (autoscaling) templates ready if prioritized.
 
 ---
 ## 0. Baseline Assessment
@@ -291,15 +298,15 @@ Deliverables:
 1. ✅ Phases 0 & 0.5 (baseline + container images) — complete.
 2. ✅ Phase 1 chart skeletons referencing image tags — complete; API chart deployed locally.
 3. ✅ Phase 2 local cluster — kind cluster created and operational.
-4. ⏳ Phase 3 ingress/TLS scaffolding (next priority if external access needed).
-5. ⏳ Phase 5 security basics (namespaces ✅ created; service accounts + RBAC pending).
+4. ✅ Phase 3 ingress/TLS scaffolding — complete.
+5. ✅ Phase 5 security basics — ServiceAccounts, NetworkPolicies, secret strategy complete.
 6. ⏳ Phase 6 autoscaling templates (disabled by default; ready to enable).
 7. ⏳ Phase 7 CI pipeline baseline (image build + manifest validation + smoke tests).
 8. ⏳ Phase 4 observability (enabled after base stable & security pass).
 9. ⏳ Phase 9 docs & runbooks.
 10. ⏳ Phase 10 risk register formalization.
 
-Current State: Phase 1 MVP achieved locally. Next decision point: Phase 2 (ingress) or Phase 7 (CI) or scaffold web/admin charts.
+Current State: Phase 5 MVP achieved (security basics in place). Next decision point: Phase 7 (CI) or scaffold web/admin charts or Phase 6 (autoscaling templates).
 
 ---
 ## Minimal Helm values Example (API)

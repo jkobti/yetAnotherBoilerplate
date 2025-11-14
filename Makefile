@@ -1,4 +1,4 @@
-.PHONY: help build-api helm-template-api kind-up kind-down deploy-local install-nginx deploy-ingress
+.PHONY: help build-api helm-template-api kind-up kind-down deploy-local install-nginx deploy-ingress setup-local-dns create-secrets apply-network-policies
 
 help:
 	@echo "Available targets:"
@@ -10,6 +10,8 @@ help:
 	@echo "  install-nginx          Install NGINX ingress controller to kind cluster"
 	@echo "  deploy-ingress         Enable ingress on API chart and deploy"
 	@echo "  setup-local-dns        Add api.local.dev to /etc/hosts (requires sudo)"
+	@echo "  create-secrets         Create Kubernetes Secrets for local development"
+	@echo "  apply-network-policies Apply NetworkPolicies to clusters"
 
 # Build backend API image
 build-api:
@@ -79,3 +81,26 @@ setup-local-dns:
 		echo "127.0.0.1 api.local.dev" | sudo tee -a /etc/hosts > /dev/null; \
 		echo "✓ Added api.local.dev to /etc/hosts"; \
 	fi
+
+# Create Kubernetes Secrets for local development
+# Edit the values below before running, or set as environment variables.
+create-secrets:
+	@echo "Creating api-env Secret in apps namespace..."
+	@echo "Note: Update DATABASE_URL, REDIS_URL, and other values as needed."
+	kubectl create secret generic api-env \
+		--from-literal=DATABASE_URL="sqlite:///db.sqlite3" \
+		--from-literal=REDIS_URL="redis://localhost:6379/0" \
+		--from-literal=JWT_SECRET="dev-secret-key-change-in-prod" \
+		--from-literal=LOG_LEVEL="info" \
+		-n apps \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@echo "✓ api-env Secret created/updated."
+
+# Apply NetworkPolicies to local cluster
+# Note: Requires CNI plugin supporting NetworkPolicies (e.g., Calico).
+apply-network-policies:
+	@echo "Applying base ServiceAccounts..."
+	kubectl apply -f k8s/base/serviceaccounts.yaml
+	@echo "Applying NetworkPolicies..."
+	kubectl apply -f k8s/base/network-policies/
+	@echo "✓ NetworkPolicies applied. Verify with: kubectl get networkpolicies -n apps"

@@ -22,6 +22,7 @@ spec:
       annotations:
         {{- toYaml .Values.podAnnotations | nindent 8 }}
     spec:
+      serviceAccountName: api
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -34,6 +35,20 @@ spec:
             - name: http
               containerPort: 8000
               protocol: TCP
+          {{- if .Values.secrets.injectAsEnv }}
+          envFrom:
+            {{- if .Values.secrets.envSecretName }}
+            - secretRef:
+                name: {{ .Values.secrets.envSecretName }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.env }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /health/

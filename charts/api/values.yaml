@@ -78,5 +78,23 @@ nodeSelector: {}
 # Pod tolerations (e.g., for taints)
 tolerations: []
 
+# Secret management configuration
+# Secrets are injected via environment variables or volume mounts.
+# For local development: create Kubernetes Secrets manually or via Makefile target.
+# For staging/prod: use SealedSecrets or External Secrets Operator.
+secrets:
+  # Name of the Secret containing environment variables
+  # The Secret must exist in the same namespace (apps) and contain keys like:
+  # DATABASE_URL, REDIS_URL, JWT_SECRET, FIREBASE_CONFIG, etc.
+  envSecretName: api-env
+  # Whether to inject secret as environment variables (true) or volume mount (false)
+  injectAsEnv: true
+
+# Environment variable overrides for development (non-sensitive values only)
+# Sensitive values must come from secrets above.
+env: {}
+  # DJANGO_DEBUG: "false"
+  # LOG_LEVEL: "info"
+
 # Pod affinity rules
 affinity: {}
