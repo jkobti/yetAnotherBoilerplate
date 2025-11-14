@@ -3,7 +3,7 @@
 Companion to `04-k8s.md`. This document provides an actionable, phased execution roadmap for introducing Kubernetes to the monorepo. Treat each phase as incrementally shippable; avoid blocking later hardening on early experimentation.
 
 ---
-## Current Progress Snapshot (Nov 13, 2025)
+## Current Progress Snapshot (Nov 14, 2025)
 Status codes: ✅ complete • 🟡 partial • ⏳ pending • 💤 deferred
 
 - Phase 0 (Baseline Assessment): ✅ Complete
@@ -26,14 +26,24 @@ Status codes: ✅ complete • 🟡 partial • ⏳ pending • 💤 deferred
   - Local kind cluster (`yab-local`) created and running.
   - API Helm chart deployed to `apps` namespace; pod healthy and passing readiness probes.
   - Health endpoint validated at `/health/` (trailing slash).
-- Documentation: ✅ Backend & Flutter READMEs updated; `charts/api/README.md` with quick-start, parameters, examples, troubleshooting.
+- Phase 2 (Local Development): ✅ Complete (achieved as part of Phase 1)
+  - Local kind cluster operational with API deployment working.
+- Phase 3 (Ingress & TLS): ✅ Complete (with local limitation documented)
+  - `charts/api/templates/ingress.yaml` created with host-based routing, TLS support, gated by `ingress.enabled`.
+  - `values.yaml` enhanced with comprehensive ingress config (disabled by default, easy to enable).
+  - Makefile targets: `install-nginx`, `deploy-ingress`, `setup-local-dns`.
+  - TLS infrastructure documented: self-signed issuer for local, Let's Encrypt staging/prod issuers.
+  - `k8s/base/cert-issuers/` directory with README and issuer manifests (local-selfsigned, letsencrypt-staging, letsencrypt-prod).
+  - `k8s/base/LOCAL_INGRESS_SETUP.md` comprehensive guide with cloud deployment instructions and kind limitation workaround (use `kubectl port-forward` locally).
+  - Production-ready: Ingress pattern works on cloud clusters (GKE, EKS) without modification.
+- Documentation: ✅ Backend & Flutter READMEs updated; `charts/api/README.md` with quick-start, parameters, examples, troubleshooting. Ingress/TLS setup guides complete.
 - Config Strategy: ✅ Build-time `--dart-define` + planned future runtime `config.js` (K8s ConfigMap).
-- Security Hardening: ⏳ Not started (will begin with namespaces + service accounts in Phase 5).
-- CI/CD: ⏳ Placeholder only (image build + helm lint pipeline not yet implemented).
-- Observability: 💤 Deferred (after base charts & security).
+- Security Hardening: ⏳ Not started (Phase 5: RBAC, NetworkPolicies, ServiceAccounts).
+- CI/CD: ⏳ Placeholder only (Phase 7: image build + helm lint pipeline not yet implemented).
+- Observability: 💤 Deferred (Phase 4, after base charts & security).
 - Web/Admin Charts: ⏳ Deferred until API chart validated locally (✅ validated); scaffold pattern ready to reuse.
 
-Next Immediate Focus: Decide on web/admin chart scaffolding, then Phase 2 (Ingress & TLS) or Phase 3 (Observability) depending on priority.
+Next Immediate Focus: Phase 5 (Security basics) or Phase 7 (CI/CD). Web/Admin charts follow after core patterns stabilize.
 
 ---
 ## 0. Baseline Assessment

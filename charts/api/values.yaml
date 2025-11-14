@@ -35,17 +35,23 @@ resources:
     cpu: 500m
     memory: 512Mi
 
-# Ingress configuration (disabled by default; enable for routing)
+# Ingress configuration (disabled by default; enable for external routing)
 ingress:
   enabled: false
   className: nginx
-  annotations:
+  # Annotations for cert-manager integration (cert-manager.io/cluster-issuer)
+  # For local: comment out or use cert-manager.io/cluster-issuer: local-selfsigned
+  # For staging: cert-manager.io/cluster-issuer: letsencrypt-staging
+  # For production: cert-manager.io/cluster-issuer: letsencrypt-prod
+  annotations: {}
     # cert-manager.io/cluster-issuer: letsencrypt-staging
+  # Hostnames and paths for this Ingress
   hosts:
     - host: api.local.dev
       paths:
         - path: /
           pathType: Prefix
+  # TLS configuration (disabled by default; enable with cert-manager)
   tls: []
     # - secretName: api-tls
     #   hosts:
