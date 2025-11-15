@@ -1,4 +1,4 @@
-.PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin kind-up kind-down deploy-local deploy-web deploy-admin install-nginx deploy-ingress setup-local-dns create-secrets apply-network-policies
+.PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin kind-up kind-down deploy-local deploy-web deploy-admin install-nginx deploy-ingress setup-local-dns create-secrets create-secrets-from-env create-secrets-old apply-network-policies
 
 help:
 	@echo "Available targets:"
@@ -16,7 +16,8 @@ help:
 	@echo "  install-nginx          Install NGINX ingress controller to kind cluster"
 	@echo "  deploy-ingress         Enable ingress on API chart and deploy"
 	@echo "  setup-local-dns        Add *.local.dev entries to /etc/hosts (requires sudo)"
-	@echo "  create-secrets         Create Kubernetes Secrets for local development"
+	@echo "  create-secrets         Create Kubernetes Secrets from .env.k8s file"
+	@echo "  create-secrets-from-env Create Kubernetes Secrets from env file (specify ENV_FILE)"
 	@echo "  apply-network-policies Apply NetworkPolicies to clusters"
 
 # Build backend API image
@@ -166,16 +167,48 @@ setup-local-dns:
 		echo "✓ Added admin.local.dev to /etc/hosts"; \
 	fi
 
-# Create Kubernetes Secrets for local development
-# Edit the values below before running, or set as environment variables.
-create-secrets:
+# Create Kubernetes Secrets from environment file
+# Usage: make create-secrets-from-env [ENV_FILE=path/to/file]
+# Default: packages/backend/.env.k8s
+create-secrets-from-env:
+	@if [ ! -f "packages/backend/.env.k8s" ]; then \
+		echo "Error: packages/backend/.env.k8s not found. Copy the template first:"; \
+		echo "  cp packages/backend/.env.k8s.example packages/backend/.env.k8s"; \
+		echo "  # Edit and add your values"; \
+		echo "  make create-secrets"; \
+		exit 1; \
+	fi; \
+	echo "Creating api-env Secret from packages/backend/.env.k8s..."; \
+	kubectl create secret generic api-env \
+		--from-env-file=packages/backend/.env.k8s \
+		-n apps \
+		--dry-run=client -o yaml | kubectl apply -f -; \
+	echo "✓ api-env Secret created/updated"
+
+# Create Kubernetes Secrets for local development (from env file)
+# Alias for create-secrets-from-env with default path
+create-secrets: create-secrets-from-env
+
+# Create Kubernetes Secrets with hardcoded values (deprecated, for backwards compatibility)
+create-secrets-old:
+	@echo "WARNING: This target uses hardcoded values. Prefer 'make create-secrets' instead."
 	@echo "Creating api-env Secret in apps namespace..."
-	@echo "Note: Update DATABASE_URL, REDIS_URL, and other values as needed."
+	@echo "Note: Edit packages/backend/.env.k8s and run 'make create-secrets' for proper local setup."
 	kubectl create secret generic api-env \
 		--from-literal=DATABASE_URL="sqlite:///db.sqlite3" \
 		--from-literal=REDIS_URL="redis://localhost:6379/0" \
 		--from-literal=JWT_SECRET="dev-secret-key-change-in-prod" \
 		--from-literal=LOG_LEVEL="info" \
+		--from-literal=DEBUG="true" \
+		--from-literal=SECRET_KEY="dev-insecure-secret-key" \
+		--from-literal=ALLOWED_HOSTS="127.0.0.1,localhost,0.0.0.0,api.local.dev" \
+		--from-literal=API_DOCS_ENABLED="true" \
+		--from-literal=EMAIL_PROVIDER="console" \
+		--from-literal=DEFAULT_FROM_EMAIL="no-reply@example.local" \
+		--from-literal=CORS_ALLOW_ALL_ORIGINS="true" \
+		--from-literal=MAGIC_LINK_VERIFY_URL="http://localhost:5173" \
+		--from-literal=MAGIC_LINK_EXPIRY_MINUTES="5" \
+		--from-literal=MAGIC_LINK_DEBUG_ECHO_TOKEN="true" \
 		-n apps \
 		--dry-run=client -o yaml | kubectl apply -f -
 	@echo "✓ api-env Secret created/updated."

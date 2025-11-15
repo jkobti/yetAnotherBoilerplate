@@ -79,16 +79,27 @@ nodeSelector: {}
 tolerations: []
 
 # Secret management configuration
-# Secrets are injected via environment variables or volume mounts.
-# For local development: create Kubernetes Secrets manually or via Makefile target.
-# For staging/prod: use SealedSecrets or External Secrets Operator.
+# IMPORTANT: Web app is a STATIC BUILD compiled with config at Docker build time.
+# Kubernetes Secrets CANNOT change runtime behavior (unlike backend).
+#
+# Configuration flow:
+# 1. At Docker build time: Pass --build-arg API_BASE_URL, FIREBASE_* values
+# 2. Flutter compiles these into JavaScript via --dart-define
+# 3. At runtime: Config is baked into the app; env vars have NO effect
+#
+# For dynamic config changes without rebuild: See Docs/10-frontend-secrets.md
+#
+# To customize per environment:
+# - Staging: Rebuild image with: docker build --build-arg API_BASE_URL=https://api-staging.example.com
+# - Production: Rebuild image with: docker build --build-arg API_BASE_URL=https://api.example.com
+# - Deploy same image to all clusters (config is immutable in the build)
+#
+# Kubernetes Secrets are kept for documentation/future use only.
 secrets:
-  # Name of the Secret containing environment variables
-  # The Secret may contain keys like FIREBASE_CONFIG, API_URL, etc.
-  # For static web builds, minimal runtime secrets typically needed.
+  # UNUSED: Kubernetes Secrets cannot affect static web builds
+  # Kept for consistency; not injected into NGINX containers
   envSecretName: web-env
-  # Whether to inject secret as environment variables (true) or volume mount (false)
-  injectAsEnv: true
+  injectAsEnv: false
 
 # Environment variable overrides for development (non-sensitive values only)
 # Sensitive values must come from secrets above.

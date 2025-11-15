@@ -1,0 +1,15 @@
+# Kubernetes Secrets - NEVER commit actual secrets
+# Always copy *.example files and fill in values locally
+
+# Local secrets
+secrets.yaml
+
+# Staging secrets
+secrets.yaml
+
+# Production secrets
+secrets.yaml
+
+# Environment files (contain sensitive values)
+../.env.k8s
+../../packages/backend/.env.k8s

@@ -1,0 +1,16 @@
+{
+    "API_BASE_URL": "http://localhost:8000",
+    "PUSH_NOTIFICATIONS_ENABLED": "false",
+    "FIREBASE_API_KEY": "",
+    "FIREBASE_APP_ID": "",
+    "FIREBASE_MESSAGING_SENDER_ID": "",
+    "FIREBASE_PROJECT_ID": "",
+    "FIREBASE_VAPID_KEY": "",
+    "FIREBASE_AUTH_DOMAIN": "",
+    "FIREBASE_STORAGE_BUCKET": "",
+    "FRONTEND_SENTRY_DSN": "",
+    "REALTIME_ENABLED": "false",
+    "FEATURE_FLAG_CLIENT_ENABLED": "true",
+    "OBJECT_STORAGE_DIRECT_ACCESS": "false",
+    "DEBUG": "true"
+}

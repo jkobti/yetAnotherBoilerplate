@@ -1,0 +1,11 @@
+# Patch: Use local secret and set pullPolicy to Never for kind
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          imagePullPolicy: Never

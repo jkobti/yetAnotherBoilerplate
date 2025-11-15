@@ -1,0 +1,64 @@
+# Flutter Web & Admin App Configuration Templates
+#
+# IMPORTANT: Unlike the backend, web/admin apps use --dart-define at BUILD TIME.
+# These values are compiled into the JavaScript—they are NOT environment variables.
+#
+# For local development: Use env/local.json with flutter run/build
+# For Kubernetes: Use build args in Dockerfile during image build
+#
+# See packages/flutter_app/README.md for details
+
+# ============================================================================
+# API CONFIGURATION
+# ============================================================================
+
+# Backend API base URL (REQUIRED)
+# Local dev: http://localhost:8000
+# K8s local: http://api.local.dev or http://api.apps.svc.cluster.local:8000
+# Staging: https://api-staging.example.com
+# Production: https://api.example.com
+API_BASE_URL=http://localhost:8000
+
+# ============================================================================
+# PUSH NOTIFICATIONS (Firebase Cloud Messaging)
+# ============================================================================
+
+# Enable push notifications (true/false)
+# Local: true (if Firebase project is configured)
+# Production: true (with real Firebase project)
+PUSH_NOTIFICATIONS_ENABLED=false
+
+# Firebase Web App credentials
+# These are PUBLIC client-side credentials (not secret)
+# Get from Firebase Console > Project Settings > Your apps > Web
+FIREBASE_API_KEY=
+FIREBASE_APP_ID=
+FIREBASE_MESSAGING_SENDER_ID=
+FIREBASE_PROJECT_ID=
+FIREBASE_AUTH_DOMAIN=
+FIREBASE_STORAGE_BUCKET=
+FIREBASE_VAPID_KEY=
+
+# ============================================================================
+# FEATURE FLAGS & OPTIONAL FEATURES
+# ============================================================================
+
+# Sentry error reporting DSN (optional)
+# Leave empty to disable
+FRONTEND_SENTRY_DSN=
+
+# Enable WebSocket/realtime features (true/false)
+REALTIME_ENABLED=false
+
+# Enable feature flag client (true/false)
+FEATURE_FLAG_CLIENT_ENABLED=true
+
+# Direct object storage access (true/false)
+OBJECT_STORAGE_DIRECT_ACCESS=false
+
+# ============================================================================
+# DEBUG & LOGGING
+# ============================================================================
+
+# Debug mode (true/false) - shown in UI if enabled
+DEBUG=false

@@ -1,0 +1,33 @@
+# Kustomization for production environment
+# Usage: kubectl apply -k k8s/overlays/production
+# Or: kustomize build k8s/overlays/production | kubectl apply -f -
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: apps
+
+# Reference base resources
+bases:
+  - ../../base
+
+# Patch resources from base
+patchesStrategicMerge:
+  - deployment-patch.yaml
+
+# Production-specific resource names
+namePrefix: yab-prod-
+
+# Images for production (use stable tags / SHAs)
+images:
+  - name: yetanotherboilerplate/api
+    newTag: v1.0.0
+
+# Common labels
+commonLabels:
+  environment: production
+  managed-by: kustomize
+
+commonAnnotations:
+  description: "Production environment overlay"
+  compliance: "pci-dss-v3.2.1"

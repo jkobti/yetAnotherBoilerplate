@@ -1,0 +1,32 @@
+# Kustomization for local development
+# Usage: kubectl apply -k k8s/overlays/local
+# Or: kustomize build k8s/overlays/local | kubectl apply -f -
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: apps
+
+# Reference base resources
+bases:
+  - ../../base
+
+# Patch resources from base
+patchesStrategicMerge:
+  - deployment-patch.yaml
+
+# Local-specific resource names
+namePrefix: yab-local-
+
+# Images for local development (low priority, use docker pullPolicy=Never)
+images:
+  - name: yetanotherboilerplate/api
+    newTag: dev
+
+# Common labels
+commonLabels:
+  environment: local
+  managed-by: kustomize
+
+commonAnnotations:
+  description: "Local development overlay for kind cluster"

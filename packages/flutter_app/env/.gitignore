@@ -1,0 +1,10 @@
+# Flutter app environment files - NEVER commit actual config
+# Always copy *.example files and fill in values locally
+
+# Local config (compiled into app at build time)
+local.json
+staging.json
+prod.json
+
+# For dynamic runtime config (future feature)
+config.json

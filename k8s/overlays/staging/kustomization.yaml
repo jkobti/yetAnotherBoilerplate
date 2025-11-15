@@ -1,0 +1,32 @@
+# Kustomization for staging environment
+# Usage: kubectl apply -k k8s/overlays/staging
+# Or: kustomize build k8s/overlays/staging | kubectl apply -f -
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: apps
+
+# Reference base resources
+bases:
+  - ../../base
+
+# Patch resources from base
+patchesStrategicMerge:
+  - deployment-patch.yaml
+
+# Staging-specific resource names
+namePrefix: yab-staging-
+
+# Images for staging
+images:
+  - name: yetanotherboilerplate/api
+    newTag: staging
+
+# Common labels
+commonLabels:
+  environment: staging
+  managed-by: kustomize
+
+commonAnnotations:
+  description: "Staging environment overlay"

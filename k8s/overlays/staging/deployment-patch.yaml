@@ -1,0 +1,24 @@
+# Patch: Use staging image tag and Always pull policy
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: api
+          imagePullPolicy: Always
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - api
+                topologyKey: kubernetes.io/hostname
