@@ -28,22 +28,52 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       initContainers:
+        # First init container: actively wait for PostgreSQL to become ready.
+        - name: wait-for-db
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - >-
+              echo "[wait-for-db] Waiting for Postgres at postgres:5432";
+              for i in $(seq 1 60); do
+                pg_isready -h postgres -p 5432 -U postgres >/dev/null 2>&1 && echo "[wait-for-db] Postgres is ready" && exit 0;
+                echo "[wait-for-db] Attempt $i/60: Postgres not ready yet";
+                sleep 2;
+              done;
+              echo "[wait-for-db] Timed out waiting for Postgres";
+              exit 1;
+        # Second init container: run Django migrations with unbuffered verbose output.
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["python", "manage.py", "migrate", "--no-input"]
+          command:
+            - sh
+            - -c
+            - >-
+              echo "[migrate] Starting Django migrations";
+              python manage.py migrate --no-input --verbosity 2;
+              echo "[migrate] Migrations complete";
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            {{- if .Values.secrets.injectAsEnv }}
+            {{- if .Values.secrets.envSecretName }}
+            # Injected below via envFrom for secret values
+            {{- end }}
+            {{- end }}
+            {{- with .Values.env }}
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
           {{- if .Values.secrets.injectAsEnv }}
           envFrom:
             {{- if .Values.secrets.envSecretName }}
             - secretRef:
                 name: {{ .Values.secrets.envSecretName }}
-            {{- end }}
-          {{- end }}
-          {{- with .Values.env }}
-          env:
-            {{- range $key, $value := . }}
-            - name: {{ $key }}
-              value: {{ $value | quote }}
             {{- end }}
           {{- end }}
       containers:

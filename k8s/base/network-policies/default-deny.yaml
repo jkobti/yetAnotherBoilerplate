@@ -64,6 +64,29 @@ spec:
           port: 9090  # Prometheus scrape port (example)
 
 ---
+# NetworkPolicy: Allow pods in apps namespace to connect to PostgreSQL
+# Purpose: Permit API and migrate containers to connect to PostgreSQL on port 5432.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-postgres
+  namespace: apps
+  labels:
+    app.kubernetes.io/part-of: yetanotherboilerplate
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
 # NetworkPolicy: Default Deny Egress in apps namespace (optional, stricter control)
 # Purpose: Deny all outbound traffic by default; allow explicitly.
 # NOTE: Uncomment to enforce stricter egress control.

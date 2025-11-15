@@ -1,6 +1,9 @@
 enabled: true
 replicaCount: 1
 
+# Override the generated fullname so Service DNS is simply 'postgres'
+fullnameOverride: postgres
+
 image:
   repository: postgres
   tag: "15-alpine"
