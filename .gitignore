@@ -5,6 +5,7 @@ wiki/
 wiki-stage/
 .DS_Store
 packages/backend/.env
+packages/backend/.env.k8s
 packages/backend/db.sqlite3
 packages/backend/yetanotherboilerplate-firebase-adminsdk-fbsvc-a8f1ed6c4b.json
 packages/flutter_app/web/env/
