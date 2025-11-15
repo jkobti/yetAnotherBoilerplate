@@ -84,6 +84,21 @@ kind-down:
 deploy-local: build-api
 	@echo "Deploying namespaces..."
 	kubectl apply -f k8s/base/namespaces.yaml
+	@echo "Deploying PostgreSQL database to 'apps' namespace..."
+	helm install postgres charts/postgres \
+		--namespace apps \
+		--set enabled=true \
+		--set postgres.user=postgres \
+		--set postgres.password=postgres \
+		--set postgres.database=backend \
+		2>/dev/null || helm upgrade postgres charts/postgres \
+		--namespace apps \
+		--set enabled=true \
+		--set postgres.user=postgres \
+		--set postgres.password=postgres \
+		--set postgres.database=backend
+	@echo "Waiting for PostgreSQL to be ready..."
+	kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=postgres -n apps --timeout=120s
 	@echo "Deploying API chart to 'apps' namespace..."
 	helm install yab-api charts/api \
 		--namespace apps \

@@ -1,0 +1,41 @@
+enabled: true
+replicaCount: 1
+
+image:
+  repository: postgres
+  tag: "15-alpine"
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 5432
+  nodePort: 30432
+
+postgres:
+  user: postgres
+  password: postgres
+  database: backend
+  initdb_args: ""
+
+storage:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+env: {}
+
+podAnnotations: {}
+
+nodeSelector: {}
+
+affinity: {}
+
+tolerations: []
