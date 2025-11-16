@@ -2,10 +2,12 @@ from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 
 
+@csrf_exempt
 def health_view(_request):
     return JsonResponse({"status": "ok"})
 

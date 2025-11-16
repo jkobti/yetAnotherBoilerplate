@@ -1,4 +1,4 @@
-.PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin kind-up kind-down deploy-local deploy-web deploy-admin install-nginx deploy-ingress setup-local-dns create-secrets create-secrets-from-env create-secrets-old apply-network-policies
+.PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin kind-up kind-down deploy-local deploy-web deploy-admin install-nginx deploy-ingress setup-local-dns create-secrets create-secrets-from-env create-secrets-old apply-network-policies cluster-delete
 
 help:
 	@echo "Available targets:"
@@ -10,6 +10,7 @@ help:
 	@echo "  helm-template-admin    Render admin Helm chart templates"
 	@echo "  kind-up                Create local kind cluster"
 	@echo "  kind-down              Destroy local kind cluster"
+	@echo "  cluster-delete         Delete entire cluster and clean up (kind cluster + Docker images + state)"
 	@echo "  deploy-local           Deploy API chart to local kind cluster"
 	@echo "  deploy-web             Deploy web chart to local kind cluster"
 	@echo "  deploy-admin           Deploy admin chart to local kind cluster"
@@ -79,6 +80,30 @@ kind-up:
 kind-down:
 	@echo "Destroying local kind cluster..."
 	kind delete cluster --name yab-local
+
+# Delete entire cluster and clean up (comprehensive reset)
+cluster-delete:
+	@echo "Starting comprehensive cluster deletion..."
+	@echo ""
+	@echo "Step 1: Deleting kind cluster..."
+	@kind delete cluster --name yab-local 2>/dev/null || echo "  - kind cluster not found (already deleted or doesn't exist)"
+	@echo "  - kind cluster deleted"
+	@echo ""
+	@echo "Step 2: Removing Docker images..."
+	@docker rmi -f yetanotherboilerplate/api:dev 2>/dev/null || echo "  - api:dev image not found"
+	@docker rmi -f yetanotherboilerplate/web:dev 2>/dev/null || echo "  - web:dev image not found"
+	@docker rmi -f yetanotherboilerplate/admin:dev 2>/dev/null || echo "  - admin:dev image not found"
+	@echo "  - Docker images removed"
+	@echo ""
+	@echo "Step 3: Cleaning up kubeconfig..."
+	@kubectl config delete-context kind-yab-local 2>/dev/null || echo "  - kind context not found"
+	@echo "  - kubeconfig cleaned"
+	@echo ""
+	@echo "Step 4: Removing backend database file..."
+	@rm -f packages/backend/db.sqlite3 2>/dev/null || echo "  - database file not found"
+	@echo "  - database file removed"
+	@echo ""
+	@echo "Cluster deletion complete! You can now run 'make kind-up' to create a fresh cluster."
 
 # Deploy API chart to local cluster (assumes namespaces exist)
 deploy-local: build-api
