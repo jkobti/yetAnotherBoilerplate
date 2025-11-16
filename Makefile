@@ -144,6 +144,11 @@ deploy-local: build-api
 		--namespace apps \
 		--set image.repository=yetanotherboilerplate/api \
 		--set image.tag=dev \
+		--set image.pullPolicy=Never \
+		2>/dev/null || helm upgrade yab-api charts/api \
+		--namespace apps \
+		--set image.repository=yetanotherboilerplate/api \
+		--set image.tag=dev \
 		--set image.pullPolicy=Never
 	@echo "✓ API deployed. Check status with: kubectl get pods -n apps"
 	@echo ""
@@ -165,6 +170,12 @@ deploy-web: build-web
 		--set enabled=true \
 		--set image.repository=yetanotherboilerplate/web \
 		--set image.tag=dev \
+		--set image.pullPolicy=Never \
+		2>/dev/null || helm upgrade yab-web charts/web \
+		--namespace apps \
+		--set enabled=true \
+		--set image.repository=yetanotherboilerplate/web \
+		--set image.tag=dev \
 		--set image.pullPolicy=Never
 	@echo "✓ Web deployed. Check status with: kubectl get pods -n apps"
 
@@ -176,6 +187,12 @@ deploy-admin: build-admin
 	kubectl apply -f k8s/base/serviceaccounts.yaml
 	@echo "Deploying admin chart to 'apps' namespace..."
 	helm install yab-admin charts/admin \
+		--namespace apps \
+		--set enabled=true \
+		--set image.repository=yetanotherboilerplate/admin \
+		--set image.tag=dev \
+		--set image.pullPolicy=Never \
+		2>/dev/null || helm upgrade yab-admin charts/admin \
 		--namespace apps \
 		--set enabled=true \
 		--set image.repository=yetanotherboilerplate/admin \
