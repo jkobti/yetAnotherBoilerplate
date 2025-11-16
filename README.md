@@ -10,10 +10,20 @@
 
 ## Quick Start: Local Kubernetes Deployment
 
-Deploy the backend API to a local Kubernetes cluster in one command:
+Deploy the backend API to a local Kubernetes cluster:
 
 ```bash
-make kind-up && make deploy-local
+make kind-up
+make build-api build-web build-admin
+make load-images
+make deploy-local deploy-web deploy-admin
+make install-nginx
+make create-secrets
+```
+
+Or as a single command (builds and deploys everything):
+```bash
+make kind-up && make build-api && make load-images && make deploy-local && make install-nginx && make create-secrets
 ```
 
 For detailed step-by-step instructions, access patterns, and troubleshooting, see **`charts/DEPLOYMENT.md`**.

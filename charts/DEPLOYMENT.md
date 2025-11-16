@@ -38,25 +38,43 @@ make --version
 ### Quick Start: One-Command Deployment
 
 ```bash
-# Build API image, create kind cluster, and deploy everything
-make kind-up && make deploy-local
+# Full deployment including images, cluster, and secrets
+make kind-up && make build-api && make load-images && make deploy-local && make install-nginx && make create-secrets
+```
+
+Or step-by-step:
+```bash
+make kind-up
+make build-api build-web build-admin
+make load-images
+make deploy-local deploy-web deploy-admin
+make install-nginx
+make create-secrets
 ```
 
 This automates:
 1. Creates local kind cluster (`yab-local`) with port mappings for API (8000), web (8080), ingress (80/443)
 2. Creates namespaces: `apps` (workloads), `ingress` (ingress controller), `observability` (monitoring—reserved)
-3. Builds backend API Docker image (`yetanotherboilerplate/api:dev`)
-4. Deploys API Helm chart to `apps` namespace
-5. Verifies pod is healthy and ready
+3. Builds all Docker images (API, web, admin)
+4. Loads images into kind cluster
+5. Creates service accounts and deploys Helm charts to `apps` namespace
+6. Deploys PostgreSQL database
+7. Installs NGINX ingress controller
+8. Creates Kubernetes secrets from environment variables (required for migrations and runtime)
 
 **Expected output:**
 ```
 ✓ kind cluster created
 ✓ Namespaces created
-✓ API image built
-✓ API chart deployed
+✓ All images built and loaded
+✓ Service accounts created
+✓ API, web, and admin charts deployed
 ✓ Pods ready
+✓ NGINX ingress installed
+✓ Secrets created
 ```
+
+**Important:** Secrets must be created **before** or **immediately after** deployment because the API pod runs Django migrations in its init container, which requires the `api-env` secret with database credentials and other environment variables.
 
 ### Step-by-Step Deployment (Manual)
 

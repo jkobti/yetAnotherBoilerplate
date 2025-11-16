@@ -1,4 +1,4 @@
-.PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin kind-up kind-down deploy-local deploy-web deploy-admin install-nginx deploy-ingress setup-local-dns create-secrets create-secrets-from-env create-secrets-old apply-network-policies cluster-delete
+.PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin load-images kind-up kind-down deploy-local deploy-web deploy-admin install-nginx deploy-ingress setup-local-dns create-secrets create-secrets-from-env create-secrets-old apply-network-policies cluster-delete
 
 help:
 	@echo "Available targets:"
@@ -8,6 +8,7 @@ help:
 	@echo "  helm-template-api      Render API Helm chart templates"
 	@echo "  helm-template-web      Render web Helm chart templates"
 	@echo "  helm-template-admin    Render admin Helm chart templates"
+	@echo "  load-images            Load Docker images into kind cluster"
 	@echo "  kind-up                Create local kind cluster"
 	@echo "  kind-down              Destroy local kind cluster"
 	@echo "  cluster-delete         Delete entire cluster and clean up (kind cluster + Docker images + state)"
@@ -71,10 +72,22 @@ helm-template-admin:
 	@echo "Rendering admin Helm chart..."
 	helm template yab-admin charts/admin
 
+# Load Docker images into kind cluster
+load-images:
+	@echo "Loading Docker images into kind cluster..."
+	kind load docker-image yetanotherboilerplate/api:dev --name yab-local
+	kind load docker-image yetanotherboilerplate/web:dev --name yab-local
+	kind load docker-image yetanotherboilerplate/admin:dev --name yab-local
+	@echo "✓ Images loaded into kind cluster"
+
 # Create a local kind cluster
 kind-up:
 	@echo "Creating local kind cluster..."
 	kind create cluster --config k8s/kind-config.yaml --name yab-local
+	@echo "Loading Docker images into kind cluster..."
+	@kind load docker-image yetanotherboilerplate/api:dev --name yab-local 2>/dev/null || echo "  (api:dev image not yet built)"
+	@kind load docker-image yetanotherboilerplate/web:dev --name yab-local 2>/dev/null || echo "  (web:dev image not yet built)"
+	@kind load docker-image yetanotherboilerplate/admin:dev --name yab-local 2>/dev/null || echo "  (admin:dev image not yet built)"
 
 # Destroy the local kind cluster
 kind-down:
@@ -109,6 +122,8 @@ cluster-delete:
 deploy-local: build-api
 	@echo "Deploying namespaces..."
 	kubectl apply -f k8s/base/namespaces.yaml
+	@echo "Deploying service accounts..."
+	kubectl apply -f k8s/base/serviceaccounts.yaml
 	@echo "Deploying PostgreSQL database to 'apps' namespace..."
 	helm install postgres charts/postgres \
 		--namespace apps \
@@ -131,11 +146,19 @@ deploy-local: build-api
 		--set image.tag=dev \
 		--set image.pullPolicy=Never
 	@echo "✓ API deployed. Check status with: kubectl get pods -n apps"
+	@echo ""
+	@echo "IMPORTANT: If the API pod is in a pending state, run:"
+	@echo "  make create-secrets"
+	@echo ""
+	@echo "This creates the 'api-env' secret required for Django migrations in the init container."
+	@echo "See packages/backend/.env.k8s.example for the environment variables to configure."
 
 # Deploy web chart to local cluster
 deploy-web: build-web
 	@echo "Deploying namespaces..."
 	kubectl apply -f k8s/base/namespaces.yaml
+	@echo "Deploying service accounts..."
+	kubectl apply -f k8s/base/serviceaccounts.yaml
 	@echo "Deploying web chart to 'apps' namespace..."
 	helm install yab-web charts/web \
 		--namespace apps \
@@ -149,6 +172,8 @@ deploy-web: build-web
 deploy-admin: build-admin
 	@echo "Deploying namespaces..."
 	kubectl apply -f k8s/base/namespaces.yaml
+	@echo "Deploying service accounts..."
+	kubectl apply -f k8s/base/serviceaccounts.yaml
 	@echo "Deploying admin chart to 'apps' namespace..."
 	helm install yab-admin charts/admin \
 		--namespace apps \
