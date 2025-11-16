@@ -32,8 +32,9 @@ make kind-up && make build-api build-web build-admin && make load-images && make
 | 4    | `make deploy-local deploy-web deploy-admin` | Deploys services + PostgreSQL to cluster       | ~2m   |
 | 5    | `make install-nginx`                        | Installs NGINX ingress controller              | ~1m   |
 | 6    | `make create-secrets`                       | Creates Kubernetes secrets from `.env.k8s`     | ~10s  |
+| 7    | **Port-forward all services** (see below)   | Make services accessible from localhost        | ~5s   |
 
-**Total time: ~7-10 minutes**
+**Total time: ~7-10 minutes** (deployment) + 5s (port-forwarding setup)
 
 ## Prerequisites
 
@@ -120,34 +121,43 @@ kubectl rollout restart deployment -n apps
 
 ## Accessing Services
 
-### Port Forward (Recommended for Local Dev)
+### ⚠️ Required: Start Port-Forwarding
 
-After deployment, start port-forwarding in separate terminals (or in background with `&`):
+**All three services (API, Web, Admin) require port-forwarding to be accessible from your machine.**
 
+**Option 1: Background (no terminal needed)**
 ```bash
-# API (runs on port 8000)
+nohup kubectl port-forward -n apps svc/api-api 8000:8000 &
+nohup kubectl port-forward -n apps svc/web-web 8080:80 &
+nohup kubectl port-forward -n apps svc/admin-admin 8081:80 &
+```
+
+This runs the port-forwards in the background and they'll stay active even after you close the terminal.
+
+**Option 2: Keep terminal open**
+```bash
 kubectl port-forward -n apps svc/api-api 8000:8000 &
-
-# Web frontend (map to 8080 locally)
 kubectl port-forward -n apps svc/web-web 8080:80 &
-
-# Admin frontend (map to 8081 locally)
 kubectl port-forward -n apps svc/admin-admin 8081:80 &
 ```
 
-Then access:
-- API: http://localhost:8000/health/
-- Web: http://localhost:8080
-- Admin: http://localhost:8081
-
-**Quick setup:**
+Or as a single one-liner:
 ```bash
-# Start all port-forwards in background
-kubectl port-forward -n apps svc/api-api 8000:8000 &
-kubectl port-forward -n apps svc/web-web 8080:80 &
-kubectl port-forward -n apps svc/admin-admin 8081:80 &
+kubectl port-forward -n apps svc/api-api 8000:8000 & kubectl port-forward -n apps svc/web-web 8080:80 & kubectl port-forward -n apps svc/admin-admin 8081:80 &
+```
 
-# Test API
+Keep the terminal open while developing. These port-forwards are lightweight and won't consume significant resources.
+
+### Access URLs
+
+After starting the port-forwards above:
+
+- **API**: http://localhost:8000/health/ (or any API endpoint)
+- **Web**: http://localhost:8080
+- **Admin**: http://localhost:8081
+
+**Quick test:**
+```bash
 curl http://localhost:8000/health/
 ```
 
@@ -239,9 +249,15 @@ sleep 30
 # 5. Check status
 kubectl get pods -n apps
 
-# 6. Port-forward and test
+# 6. Start port-forwarding (in a new/separate terminal, keep it open)
 kubectl port-forward -n apps svc/api-api 8000:8000 &
-curl http://localhost:8000/health/
+kubectl port-forward -n apps svc/web-web 8080:80 &
+kubectl port-forward -n apps svc/admin-admin 8081:80 &
+
+# 7. Test access
+curl http://localhost:8000/health/  # API
+curl http://localhost:8080           # Web
+curl http://localhost:8081           # Admin
 ```
 
 ## One-Command Fresh Start
