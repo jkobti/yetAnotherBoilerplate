@@ -3,6 +3,10 @@
 Quick reference for spinning up the entire local development environment.
 
 ## Full Deployment (Copy & Paste)
+```bash
+make cluster-delete
+```
+
 
 ```bash
 make kind-up
@@ -118,7 +122,7 @@ kubectl rollout restart deployment -n apps
 
 ### Option 1: Port Forward (Easiest)
 
-In separate terminal windows:
+In separate terminal windows (run each in its own terminal):
 ```bash
 # API (runs on port 8000)
 kubectl port-forward -n apps svc/api-api 8000:8000
@@ -134,6 +138,13 @@ Then access:
 - API: http://localhost:8000
 - Web: http://localhost:8080
 - Admin: http://localhost:8081
+
+**Note:** You can also run them all in background with `&` appended:
+```bash
+kubectl port-forward -n apps svc/api-api 8000:8000 &
+kubectl port-forward -n apps svc/web-web 8080:80 &
+kubectl port-forward -n apps svc/admin-admin 8081:80 &
+```
 
 ### Option 2: Ingress (Advanced)
 
