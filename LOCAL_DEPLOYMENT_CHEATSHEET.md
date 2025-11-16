@@ -120,43 +120,36 @@ kubectl rollout restart deployment -n apps
 
 ## Accessing Services
 
-### Option 1: Port Forward (Easiest)
+### Port Forward (Recommended for Local Dev)
 
-In separate terminal windows (run each in its own terminal):
+After deployment, start port-forwarding in separate terminals (or in background with `&`):
+
 ```bash
 # API (runs on port 8000)
-kubectl port-forward -n apps svc/api-api 8000:8000
+kubectl port-forward -n apps svc/api-api 8000:8000 &
 
-# Web frontend (runs on port 80 inside pod, map to 8080 locally)
-kubectl port-forward -n apps svc/web-web 8080:80
+# Web frontend (map to 8080 locally)
+kubectl port-forward -n apps svc/web-web 8080:80 &
 
 # Admin frontend (map to 8081 locally)
-kubectl port-forward -n apps svc/admin-admin 8081:80
-```
-
-Then access:
-- API: http://localhost:8000
-- Web: http://localhost:8080
-- Admin: http://localhost:8081
-
-**Note:** You can also run them all in background with `&` appended:
-```bash
-kubectl port-forward -n apps svc/api-api 8000:8000 &
-kubectl port-forward -n apps svc/web-web 8080:80 &
 kubectl port-forward -n apps svc/admin-admin 8081:80 &
 ```
 
-### Option 2: Ingress (Advanced)
+Then access:
+- API: http://localhost:8000/health/
+- Web: http://localhost:8080
+- Admin: http://localhost:8081
 
-If NGINX ingress is installed and you've set up local DNS:
+**Quick setup:**
 ```bash
-make setup-local-dns
-```
+# Start all port-forwards in background
+kubectl port-forward -n apps svc/api-api 8000:8000 &
+kubectl port-forward -n apps svc/web-web 8080:80 &
+kubectl port-forward -n apps svc/admin-admin 8081:80 &
 
-Then access via:
-- API: http://api.local.dev
-- Web: http://app.local.dev
-- Admin: http://admin.local.dev
+# Test API
+curl http://localhost:8000/health/
+```
 
 ## Cleanup & Reset
 
