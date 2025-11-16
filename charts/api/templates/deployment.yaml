@@ -84,6 +84,7 @@ spec:
             - name: http
               containerPort: 8000
               protocol: TCP
+              hostPort: 8000
           {{- if .Values.secrets.injectAsEnv }}
           envFrom:
             {{- if .Values.secrets.envSecretName }}

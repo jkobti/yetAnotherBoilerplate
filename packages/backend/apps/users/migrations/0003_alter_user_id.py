@@ -7,7 +7,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("users", "0002_alter_user_id_magiclink"),
+        ("users", "0002_magiclink"),
     ]
 
     operations = [
@@ -15,13 +15,15 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             sql="""
             ALTER TABLE users_user
-            ALTER COLUMN id TYPE uuid USING (gen_random_uuid()),
+            ALTER COLUMN id TYPE uuid USING (gen_random_uuid());
+            ALTER TABLE users_user
             ALTER COLUMN id SET DEFAULT gen_random_uuid();
             """,
             reverse_sql="""
             ALTER TABLE users_user
-            ALTER COLUMN id TYPE bigint USING (hashtext(id::text)::bigint),
             ALTER COLUMN id SET DEFAULT nextval('users_user_id_seq');
+            ALTER TABLE users_user
+            ALTER COLUMN id TYPE bigint USING (hashtext(id::text)::bigint);
             """,
         ),
         migrations.AlterField(

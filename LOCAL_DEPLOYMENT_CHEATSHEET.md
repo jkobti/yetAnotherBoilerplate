@@ -32,9 +32,13 @@ make kind-up && make build-api build-web build-admin && make load-images && make
 | 4    | `make deploy-local deploy-web deploy-admin` | Deploys services + PostgreSQL to cluster       | ~2m   |
 | 5    | `make install-nginx`                        | Installs NGINX ingress controller              | ~1m   |
 | 6    | `make create-secrets`                       | Creates Kubernetes secrets from `.env.k8s`     | ~10s  |
-| 7    | **Port-forward all services** (see below)   | Make services accessible from localhost        | ~5s   |
 
-**Total time: ~7-10 minutes** (deployment) + 5s (port-forwarding setup)
+**Total time: ~7-10 minutes**
+
+Services are immediately accessible at:
+- API: http://localhost:8000
+- Web: http://localhost:8080
+- Admin: http://localhost:8081
 
 ## Prerequisites
 
@@ -119,38 +123,28 @@ Then restart the deployments:
 kubectl rollout restart deployment -n apps
 ```
 
+### Issue: Port already allocated (8000, 8080, 8081)
+
+**Symptom:** `make kind-up` fails with error:
+```
+Bind for 0.0.0.0:8081 failed: port is already allocated
+```
+
+**Solution:** This should be handled automatically by `make cluster-delete`, but if it still occurs:
+
+1. **Wait a few seconds** - Docker needs time to release port bindings after cluster deletion
+2. **Run cluster-delete again**:
+   ```bash
+   make cluster-delete
+   ```
+
+If the issue persists, restart Docker Desktop from the menu (macOS/Windows) or restart the Docker daemon (Linux).
+
 ## Accessing Services
 
-### ⚠️ Required: Start Port-Forwarding
+### Direct Access (No Port-Forwarding Required)
 
-**All three services (API, Web, Admin) require port-forwarding to be accessible from your machine.**
-
-**Option 1: Background (no terminal needed)**
-```bash
-nohup kubectl port-forward -n apps svc/api-api 8000:8000 &
-nohup kubectl port-forward -n apps svc/web-web 8080:80 &
-nohup kubectl port-forward -n apps svc/admin-admin 8081:80 &
-```
-
-This runs the port-forwards in the background and they'll stay active even after you close the terminal.
-
-**Option 2: Keep terminal open**
-```bash
-kubectl port-forward -n apps svc/api-api 8000:8000 &
-kubectl port-forward -n apps svc/web-web 8080:80 &
-kubectl port-forward -n apps svc/admin-admin 8081:80 &
-```
-
-Or as a single one-liner:
-```bash
-kubectl port-forward -n apps svc/api-api 8000:8000 & kubectl port-forward -n apps svc/web-web 8080:80 & kubectl port-forward -n apps svc/admin-admin 8081:80 &
-```
-
-Keep the terminal open while developing. These port-forwards are lightweight and won't consume significant resources.
-
-### Access URLs
-
-After starting the port-forwards above:
+All three services are automatically accessible via the kind cluster's port mappings:
 
 - **API**: http://localhost:8000/health/ (or any API endpoint)
 - **Web**: http://localhost:8080
@@ -159,7 +153,11 @@ After starting the port-forwards above:
 **Quick test:**
 ```bash
 curl http://localhost:8000/health/
+curl http://localhost:8080
+curl http://localhost:8081
 ```
+
+The services use `hostPort` bindings in their Kubernetes deployments, which are automatically mapped to your local machine through kind's `extraPortMappings` configuration.
 
 ## Cleanup & Reset
 
@@ -221,8 +219,7 @@ helm list -n apps
 - **Secrets must be created before or immediately after deployment**. Without them, API pod can't run migrations.
 - **Use `kubectl get events -n apps`** to see what's happening if things fail
 - **Check pod logs early**: `kubectl logs -n apps <pod-name>` usually tells you what's wrong
-- **Port-forward is more reliable than ingress** on Mac/Windows with kind + Docker Desktop
-- **Keep port-forward terminals open** while developing—they're lightweight
+- **Services are automatically accessible** via hostPort bindings—no manual port-forwarding needed
 - **Rebuild an image** with `make build-api` then run `make load-images` to use the new version
 
 ## First Time Setup Flow
@@ -249,12 +246,7 @@ sleep 30
 # 5. Check status
 kubectl get pods -n apps
 
-# 6. Start port-forwarding (in a new/separate terminal, keep it open)
-kubectl port-forward -n apps svc/api-api 8000:8000 &
-kubectl port-forward -n apps svc/web-web 8080:80 &
-kubectl port-forward -n apps svc/admin-admin 8081:80 &
-
-# 7. Test access
+# 6. Test access (services are automatically available)
 curl http://localhost:8000/health/  # API
 curl http://localhost:8080           # Web
 curl http://localhost:8081           # Admin
