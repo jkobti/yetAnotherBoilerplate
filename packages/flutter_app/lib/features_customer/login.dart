@@ -7,6 +7,8 @@ import '../core/auth/auth_repository.dart';
 import '../core/api_client.dart';
 import '../core/auth/token_storage.dart';
 import '../core/widgets/app_scaffold.dart';
+import '../core/widgets/error_alert.dart';
+import '../core/utils/error_handler.dart';
 import '../core/auth/auth_state.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -39,7 +41,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       await ref.read(authStateProvider.notifier).refresh();
       if (mounted) context.go(widget.redirectPath);
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = ErrorHandler.parseError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -76,9 +78,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         (v == null || v.isEmpty) ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
-                  if (_error != null)
-                    Text(_error!, style: const TextStyle(color: Colors.red)),
-                  const SizedBox(height: 8),
+                  if (_error != null) ...[
+                    ErrorAlert(
+                      _error!,
+                      dismissible: true,
+                      onDismiss: () => setState(() => _error = null),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   PrimaryButton(
                     onPressed: _loading ? null : _submit,
                     child: _loading

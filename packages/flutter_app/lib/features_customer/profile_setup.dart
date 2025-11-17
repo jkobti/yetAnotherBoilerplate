@@ -6,6 +6,8 @@ import 'package:ui_kit/ui_kit.dart';
 import '../core/api_client.dart';
 import '../core/auth/auth_state.dart';
 import '../core/widgets/app_scaffold.dart';
+import '../core/widgets/error_alert.dart';
+import '../core/utils/error_handler.dart';
 
 class ProfileSetupPage extends ConsumerStatefulWidget {
   const ProfileSetupPage({super.key});
@@ -76,7 +78,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _error = e.toString());
+        setState(() => _error = ErrorHandler.parseError(e));
       }
     } finally {
       if (mounted) {
@@ -173,16 +175,10 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                             ),
                             const SizedBox(height: 24),
                             if (_error != null) ...[
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.shade100,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  _error!,
-                                  style: TextStyle(color: Colors.red.shade900),
-                                ),
+                              ErrorAlert(
+                                _error!,
+                                dismissible: true,
+                                onDismiss: () => setState(() => _error = null),
                               ),
                               const SizedBox(height: 24),
                             ],
