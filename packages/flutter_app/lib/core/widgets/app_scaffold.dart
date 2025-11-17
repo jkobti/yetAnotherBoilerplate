@@ -24,23 +24,11 @@ class AppScaffold extends ConsumerWidget {
     final auth = ref.watch(authStateProvider);
     final me = auth.valueOrNull;
     final themeMode = ref.watch(themeModeProvider);
-    final isDark = themeMode == ThemeMode.dark ||
-        (themeMode == ThemeMode.system &&
-            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
         actions: [
-          IconButton(
-            tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () {
-              // Flip based on the current effective theme, so first click always changes
-              ref
-                  .read(themeModeProvider.notifier)
-                  .setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
-            },
-          ),
+          _ThemeSelector(themeMode: themeMode),
           const SizedBox(width: 8),
           // Primary nav
           if (_isWide(context))
@@ -206,5 +194,101 @@ class AppScaffold extends ConsumerWidget {
         }
       },
     );
+  }
+}
+
+/// Theme selector dropdown showing Light, Dark, and System options
+class _ThemeSelector extends ConsumerWidget {
+  final ThemeMode themeMode;
+
+  const _ThemeSelector({required this.themeMode});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PopupMenuButton<ThemeMode>(
+      initialValue: themeMode,
+      tooltip: 'Theme',
+      icon: _getThemeIcon(themeMode, context),
+      onSelected: (mode) async {
+        await ref.read(themeModeProvider.notifier).setThemeMode(mode);
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: ThemeMode.light,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.light_mode,
+                size: 20,
+                color: themeMode == ThemeMode.light ? null : Colors.grey,
+              ),
+              const SizedBox(width: 12),
+              const Text('Light'),
+              if (themeMode == ThemeMode.light)
+                const Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: Icon(Icons.check, size: 18),
+                ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: ThemeMode.dark,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.dark_mode,
+                size: 20,
+                color: themeMode == ThemeMode.dark ? null : Colors.grey,
+              ),
+              const SizedBox(width: 12),
+              const Text('Dark'),
+              if (themeMode == ThemeMode.dark)
+                const Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: Icon(Icons.check, size: 18),
+                ),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: ThemeMode.system,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.brightness_auto,
+                size: 20,
+                color: themeMode == ThemeMode.system ? null : Colors.grey,
+              ),
+              const SizedBox(width: 12),
+              const Text('System'),
+              if (themeMode == ThemeMode.system)
+                const Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: Icon(Icons.check, size: 18),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Icon _getThemeIcon(ThemeMode mode, BuildContext context) {
+    final isDark = mode == ThemeMode.dark ||
+        (mode == ThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+
+    return switch (mode) {
+      ThemeMode.light => const Icon(Icons.light_mode),
+      ThemeMode.dark => const Icon(Icons.dark_mode),
+      ThemeMode.system => Icon(
+          Icons.brightness_auto,
+          color: isDark ? Colors.grey[300] : Colors.grey[700],
+        ),
+    };
   }
 }
