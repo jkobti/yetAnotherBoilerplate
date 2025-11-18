@@ -25,10 +25,53 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _passRepeatCtrl = TextEditingController();
   final _firstCtrl = TextEditingController();
   final _lastCtrl = TextEditingController();
+
+  final _emailFocus = FocusNode();
+  final _passFocus = FocusNode();
+  final _passRepeatFocus = FocusNode();
+
+  final _emailKey = GlobalKey<FormFieldState<String>>();
+  final _passKey = GlobalKey<FormFieldState<String>>();
+  final _passRepeatKey = GlobalKey<FormFieldState<String>>();
+
   bool _loading = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailFocus.addListener(() {
+      if (!_emailFocus.hasFocus) {
+        _emailKey.currentState?.validate();
+      }
+    });
+    _passFocus.addListener(() {
+      if (!_passFocus.hasFocus) {
+        _passKey.currentState?.validate();
+      }
+    });
+    _passRepeatFocus.addListener(() {
+      if (!_passRepeatFocus.hasFocus) {
+        _passRepeatKey.currentState?.validate();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    _passRepeatCtrl.dispose();
+    _firstCtrl.dispose();
+    _lastCtrl.dispose();
+    _emailFocus.dispose();
+    _passFocus.dispose();
+    _passRepeatFocus.dispose();
+    super.dispose();
+  }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -71,20 +114,55 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
+                    key: _emailKey,
+                    focusNode: _emailFocus,
                     controller: _emailCtrl,
                     decoration: const InputDecoration(labelText: 'Email'),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'Required' : null,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Required';
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(v)) {
+                        return 'Invalid email address';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
+                    key: _passKey,
+                    focusNode: _passFocus,
                     controller: _passCtrl,
                     decoration: const InputDecoration(
-                        labelText: 'Password (min 8 chars)'),
+                        labelText:
+                            'Password (min 8 chars, upper, lower, number)'),
                     obscureText: true,
-                    validator: (v) =>
-                        (v == null || v.length < 8) ? 'Min 8 chars' : null,
+                    validator: (v) {
+                      if (v == null || v.length < 8) return 'Min 8 chars';
+                      if (!v.contains(RegExp(r'[A-Z]'))) {
+                        return 'Must contain uppercase';
+                      }
+                      if (!v.contains(RegExp(r'[a-z]'))) {
+                        return 'Must contain lowercase';
+                      }
+                      if (!v.contains(RegExp(r'[0-9]'))) {
+                        return 'Must contain number';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    key: _passRepeatKey,
+                    focusNode: _passRepeatFocus,
+                    controller: _passRepeatCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Repeat Password'),
+                    obscureText: true,
+                    validator: (v) {
+                      if (v != _passCtrl.text) return 'Passwords do not match';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(

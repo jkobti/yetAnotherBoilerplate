@@ -74,7 +74,30 @@ class RegisterSerializer(serializers.Serializer):
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
 
+    def validate_password(self, value):
+        import re
+
+        if not re.search(r"[A-Z]", value):
+            raise serializers.ValidationError(
+                "Password must contain at least one uppercase letter."
+            )
+        if not re.search(r"[a-z]", value):
+            raise serializers.ValidationError(
+                "Password must contain at least one lowercase letter."
+            )
+        if not re.search(r"\d", value):
+            raise serializers.ValidationError(
+                "Password must contain at least one number."
+            )
+        return value
+
     def validate_email(self, value):
+        import re
+
+        # Ensure domain has a dot (e.g. example.com)
+        if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", value):
+            raise serializers.ValidationError("Enter a valid email address.")
+
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("Email already registered")
         return value
