@@ -26,19 +26,37 @@ class AppFooter extends StatelessWidget {
                       ? Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _ColumnBlock(title: 'Product', children: _productLinks(context, textTheme)),
+                            _ColumnBlock(
+                                title: 'Product',
+                                children: _productLinks(context, textTheme)),
                             const SizedBox(height: 16),
-                            _ColumnBlock(title: 'Resources', children: _resourcesLinks(context, textTheme)),
+                            _ColumnBlock(
+                                title: 'Resources',
+                                children: _resourcesLinks(context, textTheme)),
                             const SizedBox(height: 16),
-                            _ColumnBlock(title: 'Company', children: _companyLinks(context, textTheme)),
+                            _ColumnBlock(
+                                title: 'Company',
+                                children: _companyLinks(context, textTheme)),
                           ],
                         )
                       : Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: _ColumnBlock(title: 'Product', children: _productLinks(context, textTheme))),
-                            Expanded(child: _ColumnBlock(title: 'Resources', children: _resourcesLinks(context, textTheme))),
-                            Expanded(child: _ColumnBlock(title: 'Company', children: _companyLinks(context, textTheme))),
+                            Expanded(
+                                child: _ColumnBlock(
+                                    title: 'Product',
+                                    children:
+                                        _productLinks(context, textTheme))),
+                            Expanded(
+                                child: _ColumnBlock(
+                                    title: 'Resources',
+                                    children:
+                                        _resourcesLinks(context, textTheme))),
+                            Expanded(
+                                child: _ColumnBlock(
+                                    title: 'Company',
+                                    children:
+                                        _companyLinks(context, textTheme))),
                           ],
                         );
                 },
@@ -61,8 +79,10 @@ class AppFooter extends StatelessWidget {
 
   List<Widget> _resourcesLinks(BuildContext context, TextTheme textTheme) {
     return [
-      _FooterLink(label: 'Documentation', onTap: () => context.go('/documentation')),
-      _FooterLink(label: 'API Reference', onTap: () => context.go('/api-reference')),
+      _FooterLink(
+          label: 'Documentation', onTap: () => context.go('/documentation')),
+      _FooterLink(
+          label: 'API Reference', onTap: () => context.go('/api-reference')),
       _FooterLink(label: 'Blog', onTap: () => context.go('/blog')),
       _FooterLink(label: 'Support', onTap: () => context.go('/support')),
     ];
@@ -73,7 +93,8 @@ class AppFooter extends StatelessWidget {
       _FooterLink(label: 'About us', onTap: () => context.go('/about')),
       _FooterLink(label: 'Careers', onTap: () => context.go('/careers')),
       _FooterLink(label: 'Privacy Policy', onTap: () => context.go('/privacy')),
-      _FooterLink(label: 'Terms and conditions', onTap: () => context.go('/terms')),
+      _FooterLink(
+          label: 'Terms and conditions', onTap: () => context.go('/terms')),
     ];
   }
 }
