@@ -26,7 +26,25 @@ class AppScaffold extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              onTap: () => context.go('/'),
+              child: const Text(
+                'YetAnotherBoilerplate',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            if (title.isNotEmpty) ...[
+              const SizedBox(width: 16),
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.normal),
+              ),
+            ],
+          ],
+        ),
         actions: [
           _ThemeSelector(themeMode: themeMode),
           const SizedBox(width: 8),
