@@ -111,10 +111,18 @@ class _FooterLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.primary;
-    return TextButton(
-      style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-      onPressed: onTap,
-      child: Text(label, style: TextStyle(color: color)),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton(
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          alignment: Alignment.centerLeft,
+        ),
+        onPressed: onTap,
+        child: Text(label, style: TextStyle(color: color)),
+      ),
     );
   }
 }
