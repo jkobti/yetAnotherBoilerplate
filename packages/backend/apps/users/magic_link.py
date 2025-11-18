@@ -7,6 +7,8 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 from .models import MagicLink
@@ -95,13 +97,14 @@ def send_magic_link(record: MagicLink, raw_token: str, *, request=None) -> None:
         f"Or click to sign in: {verify_url}\n\n"
         f"Code/link expire in {settings.MAGIC_LINK_EXPIRY_MINUTES} minute(s) or after first use."
     )
-    html_body = (
-        f"<p>Hello,</p>"
-        f"<p>Your sign-in code: <strong style='font-size:20px'>{raw_token}</strong></p>"
-        f"<p>Or <a href='{verify_url}'>click here to sign in</a>.</p>"
-        f"<p>Expires in {settings.MAGIC_LINK_EXPIRY_MINUTES} minute(s) or after first use.</p>"
+    html_body = render_to_string(
+        "users/magic_link_email.html",
+        {
+            "raw_token": raw_token,
+            "verify_url": verify_url,
+            "expiry_minutes": settings.MAGIC_LINK_EXPIRY_MINUTES,
+        },
     )
-    from django.core.mail import send_mail
 
     send_mail(
         subject,
