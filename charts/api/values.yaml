@@ -96,5 +96,13 @@ env: {}
   # DJANGO_DEBUG: "false"
   # LOG_LEVEL: "info"
 
+# Database connection settings for the wait-for-db init container
+db:
+  host: postgres
+  port: 5432
+  user: postgres
+  # Whether to wait for the database to be ready before starting the application
+  waitForDB: true
+
 # Pod affinity rules
 affinity: {}

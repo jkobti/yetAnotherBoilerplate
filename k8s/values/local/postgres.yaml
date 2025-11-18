@@ -1,0 +1,5 @@
+enabled: true
+postgres:
+  user: postgres
+  password: postgres
+  database: backend

@@ -133,26 +133,22 @@ deploy-local: build-api
 	@echo "Deploying PostgreSQL database to 'apps' namespace..."
 	helm install postgres charts/postgres \
 		--namespace apps \
-		--set enabled=true \
-		--set postgres.user=postgres \
-		--set postgres.password=postgres \
-		--set postgres.database=backend \
+		-f k8s/values/local/postgres.yaml \
 		2>/dev/null || helm upgrade postgres charts/postgres \
 		--namespace apps \
-		--set enabled=true \
-		--set postgres.user=postgres \
-		--set postgres.password=postgres \
-		--set postgres.database=backend
+		-f k8s/values/local/postgres.yaml
 	@echo "Waiting for PostgreSQL to be ready..."
 	kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=postgres -n apps --timeout=120s
 	@echo "Deploying API chart to 'apps' namespace..."
 	helm install yab-api charts/api \
 		--namespace apps \
+		-f k8s/values/local/api.yaml \
 		--set image.repository=yetanotherboilerplate/api \
 		--set image.tag=dev \
 		--set image.pullPolicy=Never \
 		2>/dev/null || helm upgrade yab-api charts/api \
 		--namespace apps \
+		-f k8s/values/local/api.yaml \
 		--set image.repository=yetanotherboilerplate/api \
 		--set image.tag=dev \
 		--set image.pullPolicy=Never

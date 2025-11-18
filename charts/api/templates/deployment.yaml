@@ -28,6 +28,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       initContainers:
+        {{- if .Values.db.waitForDB }}
         # First init container: actively wait for PostgreSQL to become ready.
         - name: wait-for-db
           image: postgres:15-alpine
@@ -36,14 +37,15 @@ spec:
             - sh
             - -c
             - >-
-              echo "[wait-for-db] Waiting for Postgres at postgres:5432";
+              echo "[wait-for-db] Waiting for Postgres at {{ .Values.db.host }}:{{ .Values.db.port }}";
               for i in $(seq 1 60); do
-                pg_isready -h postgres -p 5432 -U postgres >/dev/null 2>&1 && echo "[wait-for-db] Postgres is ready" && exit 0;
+                pg_isready -h {{ .Values.db.host }} -p {{ .Values.db.port }} -U {{ .Values.db.user }} >/dev/null 2>&1 && echo "[wait-for-db] Postgres is ready" && exit 0;
                 echo "[wait-for-db] Attempt $i/60: Postgres not ready yet";
                 sleep 2;
               done;
               echo "[wait-for-db] Timed out waiting for Postgres";
               exit 1;
+        {{- end }}
         # Second init container: run Django migrations with unbuffered verbose output.
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
