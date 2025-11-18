@@ -80,84 +80,106 @@ class ProfilePage extends ConsumerWidget {
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 600),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Profile header
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Your Profile',
-                                  style:
-                                      Theme.of(context).textTheme.headlineSmall,
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 32),
+                              // Avatar & Name
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Theme.of(context).primaryColor,
+                                child: Text(
+                                  _getInitials(meData),
+                                  style: const TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                                const SizedBox(height: 24),
-
-                                // Profile information card
-                                Card(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _buildProfileField(
-                                            'Email',
-                                            meData['email']?.toString() ??
-                                                'N/A'),
-                                        _buildProfileField('User ID',
-                                            meData['id']?.toString() ?? 'N/A'),
-                                        _buildProfileField(
-                                          'First Name',
-                                          meData['first_name']
-                                                      ?.toString()
-                                                      .isEmpty ??
-                                                  true
-                                              ? 'Not set'
-                                              : meData['first_name']
-                                                      ?.toString() ??
-                                                  'N/A',
-                                        ),
-                                        _buildProfileField(
-                                          'Last Name',
-                                          meData['last_name']
-                                                      ?.toString()
-                                                      .isEmpty ??
-                                                  true
-                                              ? 'Not set'
-                                              : meData['last_name']
-                                                      ?.toString() ??
-                                                  'N/A',
-                                        ),
-                                        _buildProfileField(
-                                          'Status',
-                                          meData['is_active'] == true
-                                              ? 'Active'
-                                              : 'Inactive',
-                                        ),
-                                        _buildProfileField(
-                                          'Joined',
-                                          _formatDate(meData['date_joined']),
-                                        ),
-                                      ],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _getDisplayName(meData),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                  ),
+                              ),
+                              const SizedBox(height: 4),
+                              if (_getDisplayName(meData) !=
+                                  (meData['email']?.toString() ?? ''))
+                                Text(
+                                  meData['email']?.toString() ?? '',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
                                 ),
+                              const SizedBox(height: 32),
 
-                                const SizedBox(height: 32),
-
-                                // Action buttons
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: PrimaryButton(
-                                    onPressed: () => _logout(context, ref),
-                                    child: const Text('Sign out'),
-                                  ),
+                              // Info Section
+                              _buildSectionHeader(context, 'Account Details'),
+                              Card(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: Colors.grey.shade200),
                                 ),
-                                const SizedBox(height: 16),
-                              ],
-                            ),
+                                child: Column(
+                                  children: [
+                                    _buildListTile(
+                                      icon: Icons.badge_outlined,
+                                      title: 'User ID',
+                                      subtitle:
+                                          meData['id']?.toString() ?? 'N/A',
+                                    ),
+                                    const Divider(height: 1, indent: 56),
+                                    _buildListTile(
+                                      icon: Icons.calendar_today_outlined,
+                                      title: 'Joined',
+                                      subtitle:
+                                          _formatDate(meData['date_joined']),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Actions Section
+                              _buildSectionHeader(context, 'Settings'),
+                              Card(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: Colors.grey.shade200),
+                                ),
+                                child: Column(
+                                  children: [
+                                    ListTile(
+                                      leading: const Icon(Icons.logout,
+                                          color: Colors.red),
+                                      title: const Text(
+                                        'Sign out',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      onTap: () => _logout(context, ref),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                            ],
                           ),
                         ),
                       ),
@@ -165,31 +187,66 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileField(String label, String value) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+        ),
       ),
     );
+  }
+
+  Widget _buildListTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Color? subtitleColor,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.grey[600]),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 14,
+          color: subtitleColor ?? Colors.grey[800],
+        ),
+      ),
+    );
+  }
+
+  String _getInitials(Map<String, dynamic>? data) {
+    if (data == null) return '?';
+    final first = data['first_name']?.toString() ?? '';
+    final last = data['last_name']?.toString() ?? '';
+    if (first.isNotEmpty && last.isNotEmpty) {
+      return '${first[0]}${last[0]}'.toUpperCase();
+    }
+    final email = data['email']?.toString() ?? '';
+    if (email.isNotEmpty) {
+      return email[0].toUpperCase();
+    }
+    return '?';
+  }
+
+  String _getDisplayName(Map<String, dynamic>? data) {
+    if (data == null) return 'User';
+    final first = data['first_name']?.toString() ?? '';
+    final last = data['last_name']?.toString() ?? '';
+    if (first.isNotEmpty || last.isNotEmpty) {
+      return '$first $last'.trim();
+    }
+    return data['email']?.toString() ?? 'User';
   }
 
   String _formatDate(dynamic dateStr) {
