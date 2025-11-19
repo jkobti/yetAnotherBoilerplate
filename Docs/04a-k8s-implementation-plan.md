@@ -200,9 +200,14 @@ Decisions:
 - Logging: start with cluster logs; plan Loki/ELK later.
 
 Tasks:
-- Add `observability.enabled` global value.
-- Provide Helm dependency notes / separate deployment instructions.
-- Define basic alerts (API high error rate placeholder rule).
+- ✅ Create `charts/observability` wrapper chart.
+- ✅ Add `deploy-observability` Makefile target.
+- ✅ Add `serviceMonitor` support to `charts/api`.
+- ✅ Add `prometheusRule` support to `charts/api`.
+- ✅ Add Grafana port mapping (3000 -> 30000) to `kind-config.yaml` for direct access.
+- Add `observability.enabled` global value (managed via Makefile target for now).
+- Provide Helm dependency notes / separate deployment instructions (Done in README).
+- ✅ Define basic alerts (API high error rate placeholder rule structure added).
 
 Deliverables:
 - Metrics endpoints scraped (API pods expose `/metrics` if instrumented).
@@ -306,7 +311,7 @@ Deliverables:
 5. ✅ Phase 5 security basics — ServiceAccounts, NetworkPolicies, secret strategy complete.
 6. ⏳ Phase 6 autoscaling templates (disabled by default; ready to enable).
 7. ⏳ Phase 7 CI pipeline baseline (image build + manifest validation + smoke tests).
-8. ⏳ Phase 4 observability (enabled after base stable & security pass).
+8. 🟡 Phase 4 observability (in progress).
 9. ⏳ Phase 9 docs & runbooks.
 10. ⏳ Phase 10 risk register formalization.
 

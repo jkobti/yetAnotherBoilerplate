@@ -15,6 +15,7 @@ help:
 	@echo "  deploy-local           Deploy API chart to local kind cluster"
 	@echo "  deploy-web             Deploy web chart to local kind cluster"
 	@echo "  deploy-admin           Deploy admin chart to local kind cluster"
+	@echo "  deploy-observability   Deploy observability stack (Prometheus + Grafana)"
 	@echo "  install-nginx          Install NGINX ingress controller to kind cluster"
 	@echo "  deploy-ingress         Enable ingress on API chart and deploy"
 	@echo "  setup-local-dns        Add *.local.dev entries to /etc/hosts (requires sudo)"
@@ -202,13 +203,27 @@ deploy-admin: build-admin
 		--set image.pullPolicy=Never
 	@echo "✓ Admin deployed. Check status with: kubectl get pods -n apps"
 
-# Install NGINX ingress controller to local kind cluster
+# Deploy observability stack
+deploy-observability:
+	@echo "Adding Prometheus Community Helm repo..."
+	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+	helm repo update
+	@echo "Updating chart dependencies..."
+	helm dependency update charts/observability
+	@echo "Deploying observability chart to 'observability' namespace..."
+	helm upgrade --install observability charts/observability \
+		--namespace observability \
+		--create-namespace \
+		--values charts/observability/values.yaml
+	@echo "✓ Observability stack deployed."
+
+# Install NGINX ingress controller
 install-nginx:
 	@echo "Adding NGINX Helm repository..."
 	helm repo add nginx-stable https://helm.nginx.com/stable
 	helm repo update
 	@echo "Installing NGINX ingress controller to 'ingress' namespace..."
-	helm install nginx-ingress nginx-stable/nginx-ingress \
+	helm upgrade --install nginx-ingress nginx-stable/nginx-ingress \
 		--namespace ingress \
 		--create-namespace \
 		--set controller.service.type=NodePort \

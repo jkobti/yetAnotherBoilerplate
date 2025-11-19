@@ -29,3 +29,8 @@ nodes:
         hostPort: 443
         listenAddress: "127.0.0.1"
         protocol: TCP
+      # Grafana service port mapping
+      - containerPort: 30000
+        hostPort: 3000
+        listenAddress: "127.0.0.1"
+        protocol: TCP

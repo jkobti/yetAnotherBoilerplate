@@ -1,0 +1,51 @@
+enabled: true
+
+kube-prometheus-stack:
+  enabled: true
+  fullnameOverride: "prometheus"
+
+  defaultRules:
+    create: true
+    rules:
+      etcd: false
+      kubeScheduler: false
+
+  alertmanager:
+    enabled: true
+
+  grafana:
+    enabled: true
+    adminPassword: "admin" # TODO: Change via secret in production
+    service:
+      type: NodePort
+      nodePort: 30000
+    ingress:
+      enabled: false
+      ingressClassName: nginx
+      hosts:
+        - grafana.local.dev
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+      datasources:
+        enabled: true
+        defaultDatasourceEnabled: true
+
+  prometheus:
+    enabled: true
+    prometheusSpec:
+      # Allow Prometheus to scrape ServiceMonitors from all namespaces
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorSelector: {}
+      serviceMonitorNamespaceSelector: {}
+
+      # Allow Prometheus to scrape PodMonitors from all namespaces
+      podMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelector: {}
+      podMonitorNamespaceSelector: {}
+
+      # Allow Prometheus to scrape PrometheusRules from all namespaces
+      ruleSelectorNilUsesHelmValues: false
+      ruleSelector: {}
+      ruleNamespaceSelector: {}

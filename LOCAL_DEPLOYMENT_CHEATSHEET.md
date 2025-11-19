@@ -13,13 +13,14 @@ make kind-up
 make build-api build-web build-admin
 make load-images
 make deploy-local deploy-web deploy-admin
+make deploy-observability
 make install-nginx
 make create-secrets
 ```
 
 Or as a one-liner:
 ```bash
-make kind-up && make build-api build-web build-admin && make load-images && make deploy-local deploy-web deploy-admin && make install-nginx && make create-secrets
+make kind-up && make build-api build-web build-admin && make load-images && make deploy-local deploy-web deploy-admin && make deploy-observability && make install-nginx && make create-secrets
 ```
 
 ## Step-by-Step Breakdown
@@ -30,15 +31,17 @@ make kind-up && make build-api build-web build-admin && make load-images && make
 | 2    | `make build-api build-web build-admin`      | Builds Docker images for all services          | ~3-5m |
 | 3    | `make load-images`                          | Loads images into kind cluster                 | ~30s  |
 | 4    | `make deploy-local deploy-web deploy-admin` | Deploys services + PostgreSQL to cluster       | ~2m   |
-| 5    | `make install-nginx`                        | Installs NGINX ingress controller              | ~1m   |
-| 6    | `make create-secrets`                       | Creates Kubernetes secrets from `.env.k8s`     | ~10s  |
+| 5    | `make deploy-observability`                 | Deploys Prometheus & Grafana stack             | ~2m   |
+| 6    | `make install-nginx`                        | Installs NGINX ingress controller              | ~1m   |
+| 7    | `make create-secrets`                       | Creates Kubernetes secrets from `.env.k8s`     | ~10s  |
 
-**Total time: ~7-10 minutes**
+**Total time: ~9-12 minutes**
 
 Services are immediately accessible at:
 - API: http://localhost:8000
 - Web: http://localhost:8080
 - Admin: http://localhost:8081
+- Grafana: http://localhost:3000 (user: admin / pass: admin)
 
 ## Prerequisites
 
@@ -123,7 +126,7 @@ Then restart the deployments:
 kubectl rollout restart deployment -n apps
 ```
 
-### Issue: Port already allocated (8000, 8080, 8081)
+### Issue: Port already allocated (8000, 8080, 8081, 3000)
 
 **Symptom:** `make kind-up` fails with error:
 ```
@@ -144,7 +147,12 @@ If the issue persists, restart Docker Desktop from the menu (macOS/Windows) or r
 
 ### Direct Access (No Port-Forwarding Required)
 
-All three services are automatically accessible via the kind cluster's port mappings:
+All services are automatically accessible via the kind cluster's port mappings:
+
+- **API:** http://localhost:8000
+- **Web:** http://localhost:8080
+- **Admin:** http://localhost:8081
+- **Grafana:** http://localhost:3000 (user: admin / pass: admin)
 
 - **API**: http://localhost:8000/health/ (or any API endpoint)
 - **Web**: http://localhost:8080
