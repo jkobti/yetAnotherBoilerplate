@@ -31,6 +31,18 @@ kube-prometheus-stack:
       datasources:
         enabled: true
         defaultDatasourceEnabled: true
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        url: http://observability-loki:3100
+        access: proxy
+        isDefault: false
+        jsonData:
+          derivedFields:
+            - datasourceUid: prometheus
+              matcherRegex: "trace_id=(\\w+)"
+              name: TraceID
+              url: "$${__value.raw}"
 
   prometheus:
     enabled: true
@@ -49,3 +61,19 @@ kube-prometheus-stack:
       ruleSelectorNilUsesHelmValues: false
       ruleSelector: {}
       ruleNamespaceSelector: {}
+
+loki-stack:
+  enabled: true
+  loki:
+    enabled: true
+    commonConfig:
+      replication_factor: 1
+    storage:
+      type: 'filesystem'
+  promtail:
+    enabled: true
+    config:
+      clients:
+        - url: http://observability-loki:3100/loki/api/v1/push
+  grafana:
+    enabled: false # We use the grafana from kube-prometheus-stack

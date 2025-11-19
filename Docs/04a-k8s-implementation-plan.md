@@ -196,8 +196,9 @@ Purpose: metrics, dashboards, tracing readiness.
 
 Decisions:
 - Stack: kube-prometheus-stack (Prometheus + Grafana) in `observability` namespace.
+- Logging: Loki + Promtail (loki-stack) integrated into `observability` chart.
+  - *Note: Default config uses ephemeral filesystem storage. Configure S3/GCS for production retention.*
 - Tracing: OpenTelemetry Collector (deferred or placeholder chart).
-- Logging: start with cluster logs; plan Loki/ELK later.
 
 Tasks:
 - ✅ Create `charts/observability` wrapper chart.
@@ -205,13 +206,13 @@ Tasks:
 - ✅ Add `serviceMonitor` support to `charts/api`.
 - ✅ Add `prometheusRule` support to `charts/api`.
 - ✅ Add Grafana port mapping (3000 -> 30000) to `kind-config.yaml` for direct access.
-- Add `observability.enabled` global value (managed via Makefile target for now).
-- Provide Helm dependency notes / separate deployment instructions (Done in README).
+- ✅ Add `observability.enabled` global value (managed via Makefile target for now).
+- ✅ Provide Helm dependency notes / separate deployment instructions (Done in README).
 - ✅ Define basic alerts (API high error rate placeholder rule structure added).
 
 Deliverables:
-- Metrics endpoints scraped (API pods expose `/metrics` if instrumented).
-- Grafana accessible via protected ingress (optional early).
+- ✅ Metrics endpoints scraped (API pods expose `/metrics` if instrumented).
+- ✅ Grafana accessible via protected ingress (or NodePort locally).
 
 ---
 ## 5. Security & Config Management
@@ -311,7 +312,7 @@ Deliverables:
 5. ✅ Phase 5 security basics — ServiceAccounts, NetworkPolicies, secret strategy complete.
 6. ⏳ Phase 6 autoscaling templates (disabled by default; ready to enable).
 7. ⏳ Phase 7 CI pipeline baseline (image build + manifest validation + smoke tests).
-8. 🟡 Phase 4 observability (in progress).
+8. ✅ Phase 4 observability (foundations complete).
 9. ⏳ Phase 9 docs & runbooks.
 10. ⏳ Phase 10 risk register formalization.
 
