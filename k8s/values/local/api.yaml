@@ -3,3 +3,17 @@ db:
   port: 5432
   user: postgres
   waitForDB: true
+
+serviceMonitor:
+  enabled: true
+
+prometheusRule:
+  enabled: true
+  rules:
+    - alert: ApiHighErrorRate
+      expr: rate(django_http_responses_total_by_status_view_method_total{status=~"5.."}[1m]) > 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: High error rate on API

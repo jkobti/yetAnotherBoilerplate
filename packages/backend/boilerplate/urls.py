@@ -17,6 +17,7 @@ urlpatterns = [
     path("admin/api/", include("apps.admin_api.urls")),
     path("admin/", admin.site.urls),
     path("health/", health_view, name="health"),
+    path("", include("django_prometheus.urls")),
 ]
 
 if getattr(settings, "API_DOCS_ENABLED", False):

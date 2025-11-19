@@ -3,3 +3,9 @@ db:
   port: 5432
   user: postgres
   waitForDB: true
+
+serviceMonitor:
+  enabled: true
+
+prometheusRule:
+  enabled: true
