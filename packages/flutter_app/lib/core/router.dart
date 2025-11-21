@@ -13,9 +13,13 @@ import '../features_customer/profile.dart';
 import '../features_customer/profile_setup.dart';
 import '../features_customer/signup.dart';
 import '../core/widgets/auth_guard.dart';
+import '../core/widgets/not_found_page.dart';
 import '../features_customer/main_pages_batch.dart';
 
 final GoRouter _customerRouter = GoRouter(
+  errorPageBuilder: (context, state) => const MaterialPage(
+    child: NotFoundPage(isAdmin: false),
+  ),
   routes: [
     GoRoute(
       path: '/',
@@ -140,6 +144,9 @@ final GoRouter _customerRouter = GoRouter(
 );
 
 final GoRouter _adminRouter = GoRouter(
+  errorPageBuilder: (context, state) => const MaterialPage(
+    child: NotFoundPage(isAdmin: true),
+  ),
   routes: [
     GoRoute(
       path: '/',
