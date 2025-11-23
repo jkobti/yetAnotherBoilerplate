@@ -37,6 +37,10 @@ poetry run python manage.py createsuperuser --email admin@example.com
 
 # Start the dev server
 poetry run python manage.py runserver 0.0.0.0:8000
+
+# Start the Celery worker (requires Redis running)
+# Ensure CELERY_BROKER_URL is set in .env or defaults to localhost
+poetry run celery -A boilerplate worker -l info
 ```
 
 ## Container (Docker) Usage

@@ -1,0 +1,52 @@
+{{- if .Values.worker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "api.fullname" . }}-worker
+  labels:
+    {{- include "api.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "api.name" . }}-worker
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "api.name" . }}-worker
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        {{- include "api.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "api.name" . }}-worker
+        app.kubernetes.io/component: worker
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+    spec:
+      serviceAccountName: api
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            {{- toYaml .Values.worker.command | nindent 12 }}
+          {{- if .Values.secrets.injectAsEnv }}
+          envFrom:
+            {{- if .Values.secrets.envSecretName }}
+            - secretRef:
+                name: {{ .Values.secrets.envSecretName }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.env }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+{{- end }}

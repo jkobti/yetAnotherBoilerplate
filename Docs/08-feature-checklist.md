@@ -87,7 +87,7 @@ This document tracks the implementation status of all features across the yetAno
 - [ ] ⬜ API schema validation tests
 
 ### Optional Backend Features ⚙️
-- [ ] ⚙️ Celery workers for background jobs
+- [x] ⚙️ Celery workers for background jobs
 - [ ] ⚙️ Celery Beat for scheduled tasks
 - [ ] ⚙️ Django Channels for WebSockets/realtime
 - [ ] ⚙️ Redis channel layer

@@ -47,6 +47,29 @@ class _HomePageState extends ConsumerState<HomePage> {
     await ref.read(authStateProvider.notifier).signOut();
   }
 
+  Future<void> _triggerTask() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await ApiClient.I.triggerTask();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Task triggered')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -105,6 +128,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                   OutlinedButton(
                     onPressed: _logout,
                     child: const Text('Logout'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: _loading ? null : _triggerTask,
+                    child: const Text('Trigger Background Task'),
                   ),
                   const SizedBox(height: 24),
                   // Instructional title (always visible, independent of flag-gated card)

@@ -85,6 +85,11 @@ class ApiClient {
     return (resp.data as Map).cast<String, dynamic>();
   }
 
+  Future<Map<String, dynamic>> triggerTask() async {
+    final resp = await _dio.post('/api/v1/trigger-task');
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
   Future<Map<String, dynamic>> register({
     required String email,
     required String password,

@@ -48,12 +48,20 @@ prometheusRule:
   #   release: prometheus
   rules: []
     # - alert: ApiHighErrorRate
-    #   expr: rate(http_requests_total{status=~"5.."}[5m]) > 0
-    #   for: 1m
-    #   labels:
-    #     severity: critical
-    #   annotations:
-    #     summary: High error rate on API
+
+# Worker configuration (Celery)
+worker:
+  enabled: false
+  replicaCount: 1
+  # Command to run the worker
+  command: ["celery", "-A", "boilerplate", "worker", "-l", "info"]
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
 
 # Resource requests and limits
 resources:

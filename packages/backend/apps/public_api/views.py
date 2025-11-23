@@ -12,6 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.featureflags.models import FeatureFlag
 from apps.notifications.models import DeviceToken
+from apps.public_api.tasks import sample_background_task
 from apps.users.magic_link import (
     create_magic_link,
     send_magic_link,
@@ -54,15 +55,21 @@ class MeView(APIView):
         user.last_name = last_name
         user.save()
 
-        data = {
-            "id": str(user.id),
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "is_staff": user.is_staff,
-            "date_joined": user.date_joined.isoformat(),
-        }
-        return Response({"data": data})
+        return Response({"message": "Profile updated successfully"})
+
+
+class TriggerTaskView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """
+        Trigger a background task for the logged-in user.
+        """
+        task = sample_background_task.delay(request.user.email)
+        return Response(
+            {"message": "Task triggered successfully", "task_id": task.id},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
 
 User = get_user_model()

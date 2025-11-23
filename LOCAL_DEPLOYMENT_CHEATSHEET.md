@@ -12,15 +12,55 @@ make cluster-delete
 make kind-up
 make build-api build-web build-admin
 make load-images
-make deploy-local deploy-web deploy-admin
 make deploy-observability
+make deploy-local deploy-web deploy-admin
 make install-nginx
 make create-secrets
 ```
 
 Or as a one-liner:
 ```bash
-make kind-up && make build-api build-web build-admin && make load-images && make deploy-local deploy-web deploy-admin && make deploy-observability && make install-nginx && make create-secrets
+make kind-up && make build-api build-web build-admin && make load-images && make deploy-observability && make deploy-local deploy-web deploy-admin && make install-nginx && make create-secrets
+```
+
+## Full Deployment with Workers (Optional)
+
+Includes Redis and Celery worker deployment.
+
+```bash
+make kind-up
+make build-api build-web build-admin
+make load-images
+make deploy-observability
+make deploy-redis
+make deploy-local deploy-web deploy-admin
+make deploy-worker
+make install-nginx
+make create-secrets
+```
+
+Or as a one-liner:
+```bash
+make kind-up && make build-api build-web build-admin && make load-images && make deploy-observability && make deploy-redis && make deploy-local deploy-web deploy-admin && make deploy-worker && make install-nginx && make create-secrets
+```
+
+## Update Existing Deployment
+
+If your cluster is already running and you want to deploy code changes or enable workers:
+
+```bash
+make build-api build-web build-admin
+make load-images
+make deploy-observability
+make deploy-redis
+make deploy-local deploy-web deploy-admin
+make deploy-worker
+make create-secrets
+```
+
+Or as a one-liner:
+```bash
+make build-api build-web build-admin && make load-images && make deploy-observability && make deploy-redis && make deploy-local deploy-web deploy-admin && make deploy-worker && make create-secrets
 ```
 
 ## Step-by-Step Breakdown
@@ -30,10 +70,17 @@ make kind-up && make build-api build-web build-admin && make load-images && make
 | 1    | `make kind-up`                              | Creates local Kubernetes cluster (`yab-local`) | ~30s  |
 | 2    | `make build-api build-web build-admin`      | Builds Docker images for all services          | ~3-5m |
 | 3    | `make load-images`                          | Loads images into kind cluster                 | ~30s  |
-| 4    | `make deploy-local deploy-web deploy-admin` | Deploys services + PostgreSQL to cluster       | ~2m   |
-| 5    | `make deploy-observability`                 | Deploys Prometheus & Grafana stack             | ~2m   |
+| 4    | `make deploy-observability`                 | Deploys Prometheus & Grafana stack             | ~2m   |
+| 5    | `make deploy-local deploy-web deploy-admin` | Deploys services + PostgreSQL to cluster       | ~2m   |
 | 6    | `make install-nginx`                        | Installs NGINX ingress controller              | ~1m   |
 | 7    | `make create-secrets`                       | Creates Kubernetes secrets from `.env.k8s`     | ~10s  |
+
+**Optional Steps:**
+
+| Step | Command              | What It Does                           |
+| ---- | -------------------- | -------------------------------------- |
+| 8    | `make deploy-redis`  | Deploys Redis (required for worker)    |
+| 9    | `make deploy-worker` | Enables Celery worker (requires Redis) |
 
 **Total time: ~9-12 minutes**
 

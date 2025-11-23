@@ -1,4 +1,4 @@
-.PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin load-images kind-up kind-down deploy-local deploy-web deploy-admin install-nginx deploy-ingress setup-local-dns create-secrets create-secrets-from-env create-secrets-old apply-network-policies cluster-delete
+.PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin load-images kind-up kind-down deploy-local deploy-web deploy-admin deploy-observability deploy-redis deploy-worker install-nginx deploy-ingress setup-local-dns create-secrets create-secrets-from-env create-secrets-old apply-network-policies cluster-delete
 
 help:
 	@echo "Available targets:"
@@ -16,6 +16,8 @@ help:
 	@echo "  deploy-web             Deploy web chart to local kind cluster"
 	@echo "  deploy-admin           Deploy admin chart to local kind cluster"
 	@echo "  deploy-observability   Deploy observability stack (Prometheus + Grafana)"
+	@echo "  deploy-redis           Deploy Redis to local kind cluster"
+	@echo "  deploy-worker          Enable Celery worker in API deployment"
 	@echo "  install-nginx          Install NGINX ingress controller to kind cluster"
 	@echo "  deploy-ingress         Enable ingress on API chart and deploy"
 	@echo "  setup-local-dns        Add *.local.dev entries to /etc/hosts (requires sudo)"
@@ -216,6 +218,32 @@ deploy-observability:
 		--create-namespace \
 		--values charts/observability/values.yaml
 	@echo "✓ Observability stack deployed."
+
+# Deploy Redis to local cluster
+deploy-redis:
+	@echo "Deploying namespaces..."
+	kubectl apply -f k8s/base/namespaces.yaml
+	@echo "Deploying Redis to 'apps' namespace..."
+	helm install redis charts/redis \
+		--namespace apps \
+		2>/dev/null || helm upgrade redis charts/redis \
+		--namespace apps
+	@echo "✓ Redis deployed. Check status with: kubectl get pods -n apps"
+
+# Enable Celery worker in API deployment
+deploy-worker:
+	@echo "Enabling Celery worker..."
+	helm upgrade yab-api charts/api \
+		--namespace apps \
+		-f k8s/values/local/api.yaml \
+		--set image.repository=yetanotherboilerplate/api \
+		--set image.tag=dev \
+		--set image.pullPolicy=Never \
+		--set worker.enabled=true \
+		--set env.CELERY_BROKER_URL="redis://redis.apps.svc.cluster.local:6379/0" \
+		--set env.CELERY_RESULT_BACKEND="redis://redis.apps.svc.cluster.local:6379/0"
+	@echo "Restarting API deployment to ensure env vars are picked up..."
+	kubectl rollout restart deployment -n apps api-api
 
 # Install NGINX ingress controller
 install-nginx:

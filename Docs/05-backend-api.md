@@ -48,7 +48,44 @@ GET /api/v1/me
 Authorization: Bearer <access>
 ```
 
-For operational notes (troubleshooting, formatting, etc.), refer to `packages/backend/README.md`.
+## 1.2 Background Tasks (Celery)
+
+The project includes a Celery setup for asynchronous background processing, backed by Redis.
+
+- **Configuration**: `packages/backend/boilerplate/celery.py`
+- **Tasks**: Define tasks in `tasks.py` within each app (e.g., `packages/backend/apps/public_api/tasks.py`).
+- **Triggering**: Use `.delay()` or `.apply_async()` on the task function.
+
+### Example Task
+
+```python
+# apps/public_api/tasks.py
+from celery import shared_task
+
+@shared_task
+def sample_background_task(user_email):
+    # ... long running process ...
+    pass
+```
+
+### Running Locally
+
+1.  Start Redis (e.g., `docker run -p 6379:6379 redis`).
+2.  Start the worker:
+    ```zsh
+    poetry run celery -A boilerplate worker -l info
+    ```
+
+### Kubernetes Deployment
+
+The worker is deployed as a separate deployment using the same Docker image as the API. It is disabled by default.
+
+To enable it:
+1.  Deploy Redis: `make deploy-redis`
+2.  Enable Worker: `make deploy-worker`
+
+See `Docs/k8s.md` for more details.
+
 ---
 
 ## 2. Core Backend Feature Requirements

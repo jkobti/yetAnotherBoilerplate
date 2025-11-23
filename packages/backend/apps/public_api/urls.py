@@ -12,6 +12,7 @@ from .views import (
     MeView,
     PushRegisterView,
     RegisterView,
+    TriggerTaskView,
 )
 
 app_name = "public_api"
@@ -28,4 +29,5 @@ urlpatterns = [
     path("auth/jwt/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/jwt/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("auth/jwt/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    path("v1/trigger-task", TriggerTaskView.as_view(), name="trigger-task"),
 ]
