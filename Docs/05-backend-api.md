@@ -124,6 +124,19 @@ Why: Choosing CustomUser up front avoids brittle migrations later and gives you 
 
 Assume multi-tenancy from day one. Users belong to one or more organizations (aka teams/workspaces). This pattern scales from B2B (companies) to consumer (family plan / project workspace).
 
+**Application Mode (B2B/B2C)**
+
+The API supports two operational modes controlled by the `APP_MODE` environment variable:
+
+- **`b2c` (default):** Personal workspace mode. On registration, users automatically get a hidden "Personal Workspace" organization created for them. Team features are hidden in the UI.
+- **`b2b`:** Team mode. Users must explicitly create or join an organization. Full team management UI is shown.
+
+Configuration:
+```bash
+# .env
+APP_MODE=b2c  # or "b2b"
+```
+
 A) Organization
 
 - App: `organizations`
@@ -132,9 +145,11 @@ A) Organization
 Key fields:
 
 - `id`: UUID
-- `name`: e.g., "Acme Inc."
+- `name`: e.g., "Acme Inc." or "John's Workspace"
 - `owner`: FK → `users.User` (the creator/primary admin)
 - `members`: ManyToMany → `users.User` via `Membership` (through model)
+- `is_personal`: Boolean (True for auto-created personal workspaces in B2C mode)
+- `created_at`, `updated_at`: Timestamps
 
 B) Membership (through model)
 
@@ -148,7 +163,48 @@ Key fields:
 - `organization`: FK → `organizations.Organization`
 - `role`: CharField with choices (e.g., `admin`, `member`, `billing`)
 
+C) User Extensions for Organizations
+
+The User model includes:
+- `current_organization`: FK → `organizations.Organization` (nullable) - tracks the user's active organization context
+
+**Registration Behavior:**
+
+| Mode | Registration Action                                                                                             |
+| ---- | --------------------------------------------------------------------------------------------------------------- |
+| B2C  | Auto-creates personal Organization (`is_personal=True`), Membership (`role=admin`), sets `current_organization` |
+| B2B  | Creates User only; user enters onboarding to create/join team                                                   |
+
 Critical rule: Domain data (projects, documents, subscriptions, etc.) should belong to an `Organization`, not a `User`. Query and permission checks must always scope by tenant.
+
+**Organization API Endpoints:**
+
+| Endpoint                              | Method | Description                   |
+| ------------------------------------- | ------ | ----------------------------- |
+| `/api/v1/organizations/`              | GET    | List user's organizations     |
+| `/api/v1/organizations/create/`       | POST   | Create new organization       |
+| `/api/v1/organizations/{id}/`         | GET    | Get organization details      |
+| `/api/v1/organizations/{id}/switch/`  | POST   | Switch current organization   |
+| `/api/v1/organizations/{id}/members/` | GET    | List org members (admin only) |
+
+The `/api/v1/me` endpoint returns user data with `current_organization` inline:
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    "current_organization": {
+      "id": "uuid",
+      "name": "John's Workspace",
+      "is_personal": true,
+      "owner_id": "uuid"
+    }
+  }
+}
+```
 
 ### 3.3 Core Supporting Models (API access and notifications)
 

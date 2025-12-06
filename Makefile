@@ -1,5 +1,9 @@
 .PHONY: help build-api build-web build-admin helm-template-api helm-template-web helm-template-admin load-images kind-up kind-down deploy-local deploy-web deploy-admin deploy-observability deploy-redis deploy-worker install-nginx deploy-ingress setup-local-dns create-secrets create-secrets-from-env create-secrets-old apply-network-policies cluster-delete
 
+# Frontend build env files (override with WEB_ENV_FILE=/path/to/env.json)
+WEB_ENV_FILE ?= packages/flutter_app/env/local.json
+ADMIN_ENV_FILE ?= packages/flutter_app/env/local.json
+
 help:
 	@echo "Available targets:"
 	@echo "  build-api              Build backend API Docker image locally"
@@ -34,31 +38,31 @@ build-api:
 # Pass API_BASE_URL as build arg (default: http://localhost:8000 for local port-forward access)
 # Use repo root as build context (.) so Dockerfile can reference monorepo paths
 build-web:
-	@echo "Building web frontend image..."
-	@if [ -f packages/flutter_app/Dockerfile.web ]; then \
-		docker build -f packages/flutter_app/Dockerfile.web \
-			--build-arg API_BASE_URL="http://localhost:8000" \
-			--build-arg PUSH_NOTIFICATIONS_ENABLED="false" \
-			-t yetanotherboilerplate/web:dev .; \
-	else \
-		echo "Error: Dockerfile.web not found at packages/flutter_app/Dockerfile.web"; \
+	@if [ ! -f "$(WEB_ENV_FILE)" ]; then \
+		echo "Error: $(WEB_ENV_FILE) not found. Copy packages/flutter_app/env/local.json.example and update APP_MODE."; \
 		exit 1; \
 	fi
+	@echo "Building web frontend image using $(WEB_ENV_FILE)..."
+	@packages/flutter_app/scripts/docker_build_from_env_json.zsh \
+		web \
+		"$(WEB_ENV_FILE)" \
+		yetanotherboilerplate/web:dev \
+		Dockerfile.web
 
 # Build admin frontend image (Flutter web → NGINX)
 # Pass API_BASE_URL as build arg (default: http://localhost:8000 for local port-forward access)
 # Use repo root as build context (.) so Dockerfile can reference monorepo paths
 build-admin:
-	@echo "Building admin frontend image..."
-	@if [ -f packages/flutter_app/Dockerfile.admin.web ]; then \
-		docker build -f packages/flutter_app/Dockerfile.admin.web \
-			--build-arg API_BASE_URL="http://localhost:8000" \
-			--build-arg PUSH_NOTIFICATIONS_ENABLED="false" \
-			-t yetanotherboilerplate/admin:dev .; \
-	else \
-		echo "Error: Dockerfile.admin.web not found at packages/flutter_app/Dockerfile.admin.web"; \
+	@if [ ! -f "$(ADMIN_ENV_FILE)" ]; then \
+		echo "Error: $(ADMIN_ENV_FILE) not found. Copy packages/flutter_app/env/local.json.example and update APP_MODE."; \
 		exit 1; \
 	fi
+	@echo "Building admin frontend image using $(ADMIN_ENV_FILE)..."
+	@packages/flutter_app/scripts/docker_build_from_env_json.zsh \
+		admin \
+		"$(ADMIN_ENV_FILE)" \
+		yetanotherboilerplate/admin:dev \
+		Dockerfile.admin.web
 
 # Template the API Helm chart
 helm-template-api:

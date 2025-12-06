@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ui_kit/ui_kit.dart';
 
 import '../core/auth/auth_state.dart';
+import '../core/config/app_config.dart';
+import '../core/organizations/organization_provider.dart';
 import '../core/widgets/app_scaffold.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -36,6 +38,30 @@ class ProfilePage extends ConsumerWidget {
         }
       }
     }
+  }
+
+  /// Determines if team features should be shown based on app mode and org type.
+  bool _shouldShowTeamFeatures(Map<String, dynamic>? meData) {
+    // B2B mode always shows team features
+    if (AppConfig.isB2B) return true;
+
+    // B2C mode: hide for personal workspaces
+    final orgData = meData?['current_organization'] as Map<String, dynamic>?;
+    if (orgData == null) return false;
+    final isPersonal = orgData['is_personal'] as bool? ?? false;
+    return !isPersonal;
+  }
+
+  /// Get section header title based on app mode.
+  String _getSettingsHeader(Map<String, dynamic>? meData) {
+    final orgData = meData?['current_organization'] as Map<String, dynamic>?;
+    if (orgData == null) return 'Settings';
+
+    final isPersonal = orgData['is_personal'] as bool? ?? false;
+    if (isPersonal && AppConfig.isB2C) {
+      return 'Workspace Settings';
+    }
+    return 'Organization Settings';
   }
 
   @override
@@ -151,8 +177,24 @@ class ProfilePage extends ConsumerWidget {
 
                               const SizedBox(height: 24),
 
+                              // DEBUG: Show current app mode
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.symmetric(horizontal: 16),
+                                color: Colors.amber.shade100,
+                                child: Text(
+                                  'DEBUG: APP_MODE=${AppConfig.isB2B ? "B2B" : "B2C"}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Organization Section (conditional)
+                              _buildOrganizationSection(context, ref, meData),
+
                               // Actions Section
-                              _buildSectionHeader(context, 'Settings'),
+                              _buildSectionHeader(context, _getSettingsHeader(meData)),
                               Card(
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),
@@ -201,6 +243,222 @@ class ProfilePage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Build the organization section with conditional team features.
+  Widget _buildOrganizationSection(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic>? meData,
+  ) {
+    final orgData = meData?['current_organization'] as Map<String, dynamic>?;
+    final showTeamFeatures = _shouldShowTeamFeatures(meData);
+
+    // In B2B mode, show org creation UI even if user has no org yet
+    if (orgData == null && !AppConfig.isB2B) {
+      return const SizedBox.shrink();
+    }
+
+    final orgName = orgData?['name']?.toString() ?? 'Workspace';
+    final isPersonal = orgData?['is_personal'] as bool? ?? false;
+
+    // Header: "Workspace" for B2C personal, "Organization" for B2B
+    final sectionTitle = isPersonal && AppConfig.isB2C ? 'Workspace' : 'Organization';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(context, sectionTitle),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            children: [
+              // Current workspace/org name (only if user has an org)
+              if (orgData != null) ...[
+                _buildListTile(
+                  icon: isPersonal ? Icons.person_outline : Icons.business_outlined,
+                  title: isPersonal ? 'Personal Workspace' : 'Team',
+                  subtitle: orgName,
+                ),
+              ],
+
+              // Team Members - only in B2B or non-personal orgs
+              if (showTeamFeatures && orgData != null) ...[
+                const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: Icon(Icons.people_outline, color: Colors.grey[600]),
+                  title: const Text(
+                    'Team Members',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    // TODO: Navigate to team members page
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Team members coming soon')),
+                    );
+                  },
+                ),
+              ],
+
+              // Organization Switcher - only in B2B mode with existing org
+              if (AppConfig.isB2B && orgData != null) ...[
+                const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: Icon(Icons.swap_horiz, color: Colors.grey[600]),
+                  title: const Text(
+                    'Switch Organization',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showOrganizationSwitcher(context, ref),
+                ),
+              ],
+
+              // Create New Organization - always shown in B2B mode
+              if (AppConfig.isB2B) ...[
+                if (orgData != null)
+                  const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: Icon(Icons.add_business_outlined, color: Colors.grey[600]),
+                  title: const Text(
+                    'Create New Organization',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showCreateOrganizationDialog(context, ref),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  /// Show organization switcher dialog (B2B mode).
+  Future<void> _showOrganizationSwitcher(BuildContext context, WidgetRef ref) async {
+    // Fetch organizations
+    await ref.read(organizationsProvider.notifier).fetch();
+
+    if (!context.mounted) return;
+
+    final orgsState = ref.read(organizationsProvider);
+    final orgs = orgsState.valueOrNull ?? [];
+
+    if (orgs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No organizations found')),
+      );
+      return;
+    }
+
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Switch Organization'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: orgs.length,
+            itemBuilder: (context, index) {
+              final org = orgs[index];
+              return ListTile(
+                leading: Icon(
+                  org.isPersonal ? Icons.person_outline : Icons.business_outlined,
+                ),
+                title: Text(org.name),
+                subtitle: org.isPersonal
+                    ? const Text('Personal workspace')
+                    : Text(org.role ?? 'Member'),
+                trailing: org.isCurrent
+                    ? const Icon(Icons.check, color: Colors.green)
+                    : null,
+                onTap: () => Navigator.of(context).pop(org.id),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (selected != null && context.mounted) {
+      await ref.read(currentOrganizationProvider.notifier).switchTo(selected);
+      await ref.read(authStateProvider.notifier).refresh();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Switched organization')),
+        );
+      }
+    }
+  }
+
+  /// Show create organization dialog (B2B mode).
+  Future<void> _showCreateOrganizationDialog(BuildContext context, WidgetRef ref) async {
+    final nameController = TextEditingController();
+
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create Organization'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'Organization Name',
+            hintText: 'Enter team name',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final name = nameController.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.of(context).pop(name);
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+
+    nameController.dispose();
+
+    if (name != null && name.isNotEmpty && context.mounted) {
+      try {
+        await ref.read(organizationsProvider.notifier).create(name);
+        await ref.read(authStateProvider.notifier).refresh();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Created organization: $name')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error creating organization: $e')),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildListTile({

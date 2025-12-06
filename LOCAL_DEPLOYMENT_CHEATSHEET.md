@@ -109,7 +109,13 @@ Before running these commands:
    - `DATABASE_URL=postgresql://postgres:postgres@postgres:5432/backend`
    - `ALLOWED_HOSTS=127.0.0.1,localhost,0.0.0.0,api.local.dev`
 
-3. **Verify you have required tools:**
+3. **Copy the frontend env file** that drives Flutter web builds:
+   ```bash
+   cp packages/flutter_app/env/local.json.example packages/flutter_app/env/local.json
+   ```
+   Then edit `packages/flutter_app/env/local.json` to set values like `API_BASE_URL` and `APP_MODE` (`b2c` default, set to `b2b` to enable team UI). `make build-web` and `make build-admin` read this file automatically.
+
+4. **Verify you have required tools:**
    ```bash
    docker --version
    helm version

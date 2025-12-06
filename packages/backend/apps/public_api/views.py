@@ -12,6 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.featureflags.models import FeatureFlag
 from apps.notifications.models import DeviceToken
+from apps.organizations.models import Membership, Organization
 from apps.public_api.tasks import sample_background_task
 from apps.users.magic_link import (
     create_magic_link,
@@ -20,19 +21,66 @@ from apps.users.magic_link import (
 )
 
 
+def serialize_organization(org: Organization | None) -> dict | None:
+    """Serialize an Organization for API responses."""
+    if org is None:
+        return None
+    return {
+        "id": str(org.id),
+        "name": org.name,
+        "is_personal": org.is_personal,
+        "owner_id": str(org.owner_id),
+    }
+
+
+def serialize_user_with_org(user) -> dict:
+    """Serialize a User with their current organization inline."""
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "is_staff": user.is_staff,
+        "date_joined": user.date_joined.isoformat(),
+        "current_organization": serialize_organization(user.current_organization),
+    }
+
+
+def create_personal_organization(user) -> Organization:
+    """Create a personal workspace organization for a user (B2C mode).
+
+    Creates the organization, adds the user as admin member, and sets it
+    as their current organization.
+    """
+    # Build workspace name from user's name or email
+    if user.first_name:
+        workspace_name = f"{user.first_name}'s Workspace"
+    else:
+        # Use email prefix if no first name
+        email_prefix = user.email.split("@")[0]
+        workspace_name = f"{email_prefix}'s Workspace"
+
+    org = Organization.objects.create(
+        name=workspace_name,
+        owner=user,
+        is_personal=True,
+    )
+    Membership.objects.create(
+        user=user,
+        organization=org,
+        role=Membership.ROLE_ADMIN,
+    )
+    user.current_organization = org
+    user.save(update_fields=["current_organization"])
+    return org
+
+
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        data = {
-            "id": str(user.id),
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "is_staff": user.is_staff,
-            "date_joined": user.date_joined.isoformat(),
-        }
+        data = serialize_user_with_org(user)
         return Response({"data": data})
 
     def patch(self, request):
@@ -122,23 +170,24 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [AnonRateThrottle]
 
+    @transaction.atomic
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        # Issue JWT tokens for convenience in demos
+
+        # B2C mode: auto-create personal workspace
+        if settings.APP_MODE == "b2c":
+            create_personal_organization(user)
+            # Refresh user to get current_organization
+            user.refresh_from_db()
+
+        # Issue JWT tokens
         refresh = RefreshToken.for_user(user)
         data = {
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "user": {
-                "id": str(user.id),
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_staff": user.is_staff,
-                "date_joined": user.date_joined.isoformat(),
-            },
+            "user": serialize_user_with_org(user),
         }
         return Response(data, status=status.HTTP_201_CREATED)
 
@@ -241,18 +290,18 @@ class MagicLinkVerifyView(APIView):
             return Response(
                 {"error": "invalid_or_expired"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+        # B2C mode: ensure user has a personal workspace
+        # (handles both new users created via magic link and existing users without orgs)
+        if settings.APP_MODE == "b2c" and user.current_organization is None:
+            create_personal_organization(user)
+            user.refresh_from_db()
+
         refresh = RefreshToken.for_user(user)
         data = {
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "user": {
-                "id": str(user.id),
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_staff": user.is_staff,
-                "date_joined": user.date_joined.isoformat(),
-            },
+            "user": serialize_user_with_org(user),
         }
         return Response(data)
 

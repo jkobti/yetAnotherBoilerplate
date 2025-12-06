@@ -17,6 +17,10 @@ class Organization(models.Model):
     members = models.ManyToManyField(
         settings.AUTH_USER_MODEL, through="Membership", related_name="organizations"
     )
+    # True for auto-created personal workspaces (B2C mode); False for team orgs (B2B)
+    is_personal = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
         return self.name

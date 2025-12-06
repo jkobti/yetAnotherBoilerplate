@@ -17,6 +17,7 @@ COPY packages/flutter_app .
 
 # Build-time configuration via build args -> --dart-define
 ARG API_BASE_URL
+ARG APP_MODE
 ARG PUSH_NOTIFICATIONS_ENABLED
 ARG FIREBASE_API_KEY
 ARG FIREBASE_APP_ID
@@ -28,6 +29,7 @@ ARG FIREBASE_STORAGE_BUCKET
 
 RUN flutter build web --release --web-renderer canvaskit \
   --dart-define="API_BASE_URL=${API_BASE_URL:-http://localhost:8000}" \
+  --dart-define="APP_MODE=${APP_MODE:-b2c}" \
   --dart-define="PUSH_NOTIFICATIONS_ENABLED=${PUSH_NOTIFICATIONS_ENABLED:-false}" \
   --dart-define="FIREBASE_API_KEY=${FIREBASE_API_KEY:-}" \
   --dart-define="FIREBASE_APP_ID=${FIREBASE_APP_ID:-}" \

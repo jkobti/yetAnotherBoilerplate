@@ -151,4 +151,43 @@ class ApiClient {
   Future<void> deleteUser(String userId) async {
     await _dio.delete('/admin/api/users/$userId');
   }
+
+  // ============================================================================
+  // Organizations API
+  // ============================================================================
+
+  /// Get list of organizations the current user is a member of.
+  Future<Map<String, dynamic>> getOrganizations() async {
+    final resp = await _dio.get('/api/v1/organizations/');
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Create a new organization.
+  Future<Map<String, dynamic>> createOrganization(String name) async {
+    final resp = await _dio.post('/api/v1/organizations/create/', data: {
+      'name': name,
+    });
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Get details of a specific organization.
+  Future<Map<String, dynamic>> getOrganization(String organizationId) async {
+    final resp = await _dio.get('/api/v1/organizations/$organizationId/');
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Switch to a different organization.
+  Future<Map<String, dynamic>> switchOrganization(String organizationId) async {
+    final resp =
+        await _dio.post('/api/v1/organizations/$organizationId/switch/');
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Get members of an organization (requires admin role).
+  Future<Map<String, dynamic>> getOrganizationMembers(
+      String organizationId) async {
+    final resp =
+        await _dio.get('/api/v1/organizations/$organizationId/members/');
+    return (resp.data as Map).cast<String, dynamic>();
+  }
 }

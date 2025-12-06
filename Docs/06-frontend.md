@@ -82,14 +82,76 @@ The single Flutter project under `packages/flutter_app/` houses all shared UI lo
 
 ## 4. Configuration & Environment Variables
 
-| Variable                       | Description                                                          |
-| :----------------------------- | :------------------------------------------------------------------- |
-| `API_BASE_URL`                 | Root URL for REST/GraphQL calls.                                     |
-| `FRONTEND_SENTRY_DSN`          | Enables Sentry when provided.                                        |
-| `PUSH_NOTIFICATIONS_ENABLED`   | Boolean string (`true` / `false`) controlling FCM/APNs registration. |
-| `REALTIME_ENABLED`             | Enables WebSocket clients.                                           |
-| `FEATURE_FLAG_CLIENT_ENABLED`  | Turns on Unleash (or other) SDK initialization.                      |
-| `OBJECT_STORAGE_DIRECT_ACCESS` | Enables pre-signed upload flows.                                     |
+| Variable                       | Description                                                              |
+| :----------------------------- | :----------------------------------------------------------------------- |
+| `API_BASE_URL`                 | Root URL for REST/GraphQL calls.                                         |
+| `APP_MODE`                     | Application mode: `b2c` (personal workspace) or `b2b` (team management). |
+| `FRONTEND_SENTRY_DSN`          | Enables Sentry when provided.                                            |
+| `PUSH_NOTIFICATIONS_ENABLED`   | Boolean string (`true` / `false`) controlling FCM/APNs registration.     |
+| `REALTIME_ENABLED`             | Enables WebSocket clients.                                               |
+| `FEATURE_FLAG_CLIENT_ENABLED`  | Turns on Unleash (or other) SDK initialization.                          |
+| `OBJECT_STORAGE_DIRECT_ACCESS` | Enables pre-signed upload flows.                                         |
+
+### Application Modes (B2B/B2C)
+
+The `APP_MODE` environment variable controls the application's organizational behavior:
+
+**B2C Mode (`APP_MODE=b2c` - default):**
+- Personal workspace auto-created on registration
+- Team management features hidden in UI
+- "Organization" renamed to "Workspace" in UI labels
+- Org switcher and "Create Organization" buttons hidden
+
+**B2B Mode (`APP_MODE=b2b`):**
+- Users must explicitly create or join an organization
+- Full team management UI shown (Team Members, Invite, Roles)
+- Organization switcher visible for multi-org users
+- "Create New Organization" button available
+
+**Implementation:**
+
+```dart
+// lib/core/config/app_config.dart
+class AppConfig {
+  static const String _appModeEnv = String.fromEnvironment(
+    'APP_MODE',
+    defaultValue: 'b2c',
+  );
+
+  static bool get isB2C => _appModeEnv.toLowerCase() == 'b2c';
+  static bool get isB2B => _appModeEnv.toLowerCase() == 'b2b';
+}
+```
+
+**UI Conditional Logic:**
+```dart
+// In profile page or settings
+if (AppConfig.isB2B) {
+  // Show org switcher, team members, create org buttons
+}
+
+// For personal workspaces in B2C mode
+final org = user.currentOrganization;
+if (org?.isPersonal == true && AppConfig.isB2C) {
+  // Hide team features, rename "Organization" to "Workspace"
+}
+```
+
+**State Management:**
+
+The `currentOrganizationProvider` tracks the active organization:
+- Updated automatically when user authenticates
+- Can be switched via `switchTo(organizationId)` in B2B mode
+- Cleared on logout
+
+```dart
+final currentOrg = ref.watch(currentOrganizationProvider);
+currentOrg.when(
+  data: (org) => Text(org?.name ?? 'No organization'),
+  loading: () => CircularProgressIndicator(),
+  error: (e, st) => Text('Error: $e'),
+);
+```
 
 Use `flutter --dart-define-from-file=env/local.json` for local development and Helm chart ConfigMaps + Secrets for web deployments. Mobile builds should inject values during CI using `--dart-define` arguments sourced from the secure secret store.
 

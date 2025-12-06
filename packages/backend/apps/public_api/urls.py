@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -30,4 +30,6 @@ urlpatterns = [
     path("auth/jwt/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("auth/jwt/verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("v1/trigger-task", TriggerTaskView.as_view(), name="trigger-task"),
+    # Organizations
+    path("v1/organizations/", include("apps.organizations.urls")),
 ]

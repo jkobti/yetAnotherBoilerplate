@@ -11,6 +11,8 @@ env = environ.Env(
     SECRET_KEY=(str, "dev-insecure-secret-key"),
     ALLOWED_HOSTS=(list, ["*"]),
     API_DOCS_ENABLED=(bool, True),
+    # Application mode: "b2c" (personal workspace auto-created) or "b2b" (explicit org creation)
+    APP_MODE=(str, "b2c"),
     FCM_SERVER_KEY=(str, ""),
     GOOGLE_APPLICATION_CREDENTIALS=(str, ""),  # path to service account JSON (HTTP v1)
     GOOGLE_SERVICE_ACCOUNT_JSON=(str, ""),  # alternatively, raw JSON string
@@ -50,6 +52,14 @@ if isinstance(ALLOWED_HOSTS, list | tuple) and len(ALLOWED_HOSTS) == 1:
 if isinstance(ALLOWED_HOSTS, list | tuple):
     ALLOWED_HOSTS = [str(h).strip() for h in ALLOWED_HOSTS]
 API_DOCS_ENABLED = env("API_DOCS_ENABLED")
+
+# Application mode: "b2c" or "b2b"
+# - b2c: Personal workspace auto-created on registration, team features hidden
+# - b2b: Users must explicitly create/join organizations, full team UI
+APP_MODE = env("APP_MODE").lower()
+if APP_MODE not in ("b2c", "b2b"):
+    raise ValueError(f"APP_MODE must be 'b2c' or 'b2b', got '{APP_MODE}'")
+
 FCM_SERVER_KEY = env("FCM_SERVER_KEY")
 
 # Resolve GOOGLE_APPLICATION_CREDENTIALS path relative to BASE_DIR if not absolute
