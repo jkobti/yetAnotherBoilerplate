@@ -12,6 +12,8 @@ import '../features_customer/magic_link_verify.dart';
 import '../features_customer/profile.dart';
 import '../features_customer/profile_setup.dart';
 import '../features_customer/signup.dart';
+import '../features_customer/team_management.dart';
+import '../features_customer/invite_acceptance.dart';
 import '../core/widgets/auth_guard.dart';
 import '../core/widgets/not_found_page.dart';
 import '../features_customer/main_pages_batch.dart';
@@ -35,6 +37,25 @@ final GoRouter _customerRouter = GoRouter(
       path: '/profile',
       name: 'profile',
       pageBuilder: (context, state) => const MaterialPage(child: ProfilePage()),
+    ),
+    GoRoute(
+      path: '/organizations/:orgId/team-management',
+      name: 'team-management',
+      pageBuilder: (context, state) => MaterialPage(
+        child: TeamManagementPage(
+          organizationId: state.pathParameters['orgId'] ?? '',
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/invites/:orgId/:token/accept',
+      name: 'accept-invite',
+      pageBuilder: (context, state) => MaterialPage(
+        child: InviteAcceptancePage(
+          organizationId: state.pathParameters['orgId'] ?? '',
+          tokenHash: state.pathParameters['token'] ?? '',
+        ),
+      ),
     ),
     GoRoute(
       path: '/profile-setup',

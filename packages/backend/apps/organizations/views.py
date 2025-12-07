@@ -1,13 +1,23 @@
 from __future__ import annotations
 
+import hashlib
+from datetime import timedelta
+
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.organizations.models import Membership, Organization
+from apps.notifications.models import Notification
+from apps.organizations.invite_serializers import (
+    InviteSerializer,
+    MembershipRoleUpdateSerializer,
+)
+from apps.organizations.models import Membership, Organization, OrganizationInvite
 
 
 class OrganizationSerializer(serializers.Serializer):
@@ -164,3 +174,274 @@ class OrganizationMembersView(APIView):
             )
 
         return Response({"data": members, "count": len(members)})
+
+
+class OrganizationInviteListView(APIView):
+    """List pending invites for an organization (admin only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, org_id):
+        org = get_object_or_404(Organization, id=org_id, members=request.user)
+
+        # Check admin role
+        membership = Membership.objects.get(user=request.user, organization=org)
+        if membership.role not in [Membership.ROLE_ADMIN, Membership.ROLE_BILLING]:
+            return Response(
+                {"error": "Admin access required"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        invites = OrganizationInvite.objects.filter(
+            organization=org,
+            status=OrganizationInvite.STATUS_PENDING,
+        ).select_related("invited_by")
+
+        serializer = InviteSerializer(invites, many=True)
+        return Response({"data": serializer.data, "count": len(serializer.data)})
+
+
+class MyPendingInvitesView(APIView):
+    """List pending invites for the current user's email address."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get all pending invites sent to the current user's email."""
+        invites = OrganizationInvite.objects.filter(
+            invited_email__iexact=request.user.email,
+            status=OrganizationInvite.STATUS_PENDING,
+        ).select_related("organization", "invited_by")
+
+        data = []
+        for invite in invites:
+            data.append(
+                {
+                    "id": str(invite.id),
+                    "organization_id": str(invite.organization.id),
+                    "organization_name": invite.organization.name,
+                    "role": invite.role,
+                    "invited_by_email": invite.invited_by.email
+                    if invite.invited_by
+                    else None,
+                    "token_hash": invite.token_hash,
+                    "created_at": invite.created_at.isoformat(),
+                    "expires_at": invite.expires_at.isoformat(),
+                }
+            )
+
+        return Response({"data": data, "count": len(data)})
+
+
+class OrganizationInviteCreateView(APIView):
+    """Send an invitation to join an organization (admin only, B2B only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, org_id):
+        org = get_object_or_404(Organization, id=org_id, members=request.user)
+
+        # B2B only + admin check
+        if org.is_personal:
+            return Response(
+                {"error": "Invites not available for personal workspaces"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        membership = Membership.objects.get(user=request.user, organization=org)
+        if membership.role != Membership.ROLE_ADMIN:
+            return Response(
+                {"error": "Only admins can invite users"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = InviteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        invited_email = serializer.validated_data["invited_email"].lower()
+        role = serializer.validated_data.get("role", OrganizationInvite.ROLE_MEMBER)
+
+        # Check if user is already a member
+        User = get_user_model()
+        try:
+            existing_user = User.objects.get(email__iexact=invited_email)
+            if Membership.objects.filter(user=existing_user, organization=org).exists():
+                return Response(
+                    {"error": "User is already a member of this organization"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except User.DoesNotExist:
+            pass
+
+        # Generate token for accept link
+        raw_token = f"{org.id}:{invited_email}:{timezone.now().timestamp()}"
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+
+        # Revoke any existing pending invites to same email
+        OrganizationInvite.objects.filter(
+            organization=org,
+            invited_email__iexact=invited_email,
+            status=OrganizationInvite.STATUS_PENDING,
+        ).update(status=OrganizationInvite.STATUS_REVOKED)
+
+        # Create new invite
+        invite = OrganizationInvite.objects.create(
+            organization=org,
+            invited_email=invited_email,
+            invited_by=request.user,
+            role=role,
+            token_hash=token_hash,
+            expires_at=timezone.now() + timedelta(days=7),
+        )
+
+        # Send email - try async Celery task first, fall back to sync
+        from apps.organizations.tasks import send_org_invite_email
+
+        try:
+            send_org_invite_email.delay(str(invite.id))
+        except Exception:
+            # Celery/Redis not available, send synchronously
+            send_org_invite_email(str(invite.id))
+
+        # Create notification for inviter
+        Notification.objects.create(
+            recipient=request.user,
+            type="invite_sent",
+            message=f"Invitation sent to {invited_email}",
+            target_url=f"/organizations/{org.id}/members",
+        )
+
+        serializer = InviteSerializer(invite)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class OrganizationInviteAcceptView(APIView):
+    """Accept an organization invite by token."""
+
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, org_id, token):
+        org = get_object_or_404(Organization, id=org_id)
+
+        # Token comes from URL path parameter
+        token_hash = token.strip() if token else ""
+
+        # Also allow token_hash in body for backwards compatibility
+        if not token_hash:
+            token_hash = request.data.get("token_hash", "").strip()
+
+        if not token_hash:
+            return Response(
+                {"error": "token_hash is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        invite = get_object_or_404(
+            OrganizationInvite,
+            organization=org,
+            token_hash=token_hash,
+            status=OrganizationInvite.STATUS_PENDING,
+        )
+
+        # Check expiration
+        if timezone.now() > invite.expires_at:
+            invite.status = OrganizationInvite.STATUS_EXPIRED
+            invite.save(update_fields=["status"])
+            return Response(
+                {"error": "Invite has expired"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Accept invite: create/update membership
+        membership, created = Membership.objects.get_or_create(
+            user=request.user,
+            organization=org,
+            defaults={"role": invite.role},
+        )
+
+        if not created:
+            # User already a member, just update role
+            membership.role = invite.role
+            membership.save(update_fields=["role"])
+
+        # Mark invite as accepted
+        invite.status = OrganizationInvite.STATUS_ACCEPTED
+        invite.accepted_by = request.user
+        invite.accepted_at = timezone.now()
+        invite.save(update_fields=["status", "accepted_by", "accepted_at"])
+
+        # Create in-app notification for inviter
+        if invite.invited_by:
+            Notification.objects.create(
+                recipient=invite.invited_by,
+                type="invite_accepted",
+                message=f"{request.user.email} accepted your invite to {org.name}",
+                target_url=f"/organizations/{org.id}/members",
+            )
+
+        return Response(
+            {
+                "message": "Invite accepted",
+                "data": {
+                    "organization_id": str(org.id),
+                    "organization_name": org.name,
+                    "role": membership.role,
+                },
+            }
+        )
+
+
+class MembershipRoleUpdateView(APIView):
+    """Update a member's role (admin only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, org_id, membership_id):
+        org = get_object_or_404(Organization, id=org_id, members=request.user)
+
+        # Check admin role
+        requester_membership = Membership.objects.get(
+            user=request.user, organization=org
+        )
+        if requester_membership.role != Membership.ROLE_ADMIN:
+            return Response(
+                {"error": "Only admins can update roles"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Get target membership
+        target_membership = get_object_or_404(
+            Membership,
+            id=membership_id,
+            organization=org,
+        )
+
+        serializer = MembershipRoleUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        new_role = serializer.validated_data["role"]
+        old_role = target_membership.role
+
+        target_membership.role = new_role
+        target_membership.save(update_fields=["role"])
+
+        # Notify the member
+        Notification.objects.create(
+            recipient=target_membership.user,
+            type="role_updated",
+            message=f"Your role in {org.name} was changed from {old_role} to {new_role}",
+            target_url=f"/organizations/{org.id}",
+        )
+
+        return Response(
+            {
+                "message": "Role updated",
+                "data": {
+                    "id": str(target_membership.id),
+                    "email": target_membership.user.email,
+                    "role": target_membership.role,
+                },
+            }
+        )

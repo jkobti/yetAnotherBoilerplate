@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui_kit/ui_kit.dart';
 
+import '../core/api_client.dart';
 import '../core/auth/auth_state.dart';
 import '../core/config/app_config.dart';
 import '../core/organizations/organization_provider.dart';
@@ -180,11 +181,14 @@ class ProfilePage extends ConsumerWidget {
                               // DEBUG: Show current app mode
                               Container(
                                 padding: const EdgeInsets.all(12),
-                                margin: const EdgeInsets.symmetric(horizontal: 16),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 16),
                                 color: Colors.amber.shade100,
                                 child: Text(
                                   'DEBUG: APP_MODE=${AppConfig.isB2B ? "B2B" : "B2C"}',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ),
 
@@ -193,8 +197,13 @@ class ProfilePage extends ConsumerWidget {
                               // Organization Section (conditional)
                               _buildOrganizationSection(context, ref, meData),
 
+                              // Pending Invites Section (B2B only)
+                              if (AppConfig.isB2B)
+                                _buildPendingInvitesSection(context, ref),
+
                               // Actions Section
-                              _buildSectionHeader(context, _getSettingsHeader(meData)),
+                              _buildSectionHeader(
+                                  context, _getSettingsHeader(meData)),
                               Card(
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),
@@ -263,7 +272,8 @@ class ProfilePage extends ConsumerWidget {
     final isPersonal = orgData?['is_personal'] as bool? ?? false;
 
     // Header: "Workspace" for B2C personal, "Organization" for B2B
-    final sectionTitle = isPersonal && AppConfig.isB2C ? 'Workspace' : 'Organization';
+    final sectionTitle =
+        isPersonal && AppConfig.isB2C ? 'Workspace' : 'Organization';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +291,9 @@ class ProfilePage extends ConsumerWidget {
               // Current workspace/org name (only if user has an org)
               if (orgData != null) ...[
                 _buildListTile(
-                  icon: isPersonal ? Icons.person_outline : Icons.business_outlined,
+                  icon: isPersonal
+                      ? Icons.person_outline
+                      : Icons.business_outlined,
                   title: isPersonal ? 'Personal Workspace' : 'Team',
                   subtitle: orgName,
                 ),
@@ -298,10 +310,10 @@ class ProfilePage extends ConsumerWidget {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    // TODO: Navigate to team members page
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Team members coming soon')),
-                    );
+                    final orgId = orgData['id'] as String? ?? '';
+                    if (orgId.isNotEmpty) {
+                      context.push('/organizations/$orgId/team-management');
+                    }
                   },
                 ),
               ],
@@ -322,10 +334,10 @@ class ProfilePage extends ConsumerWidget {
 
               // Create New Organization - always shown in B2B mode
               if (AppConfig.isB2B) ...[
-                if (orgData != null)
-                  const Divider(height: 1, indent: 56),
+                if (orgData != null) const Divider(height: 1, indent: 56),
                 ListTile(
-                  leading: Icon(Icons.add_business_outlined, color: Colors.grey[600]),
+                  leading: Icon(Icons.add_business_outlined,
+                      color: Colors.grey[600]),
                   title: const Text(
                     'Create New Organization',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -343,7 +355,8 @@ class ProfilePage extends ConsumerWidget {
   }
 
   /// Show organization switcher dialog (B2B mode).
-  Future<void> _showOrganizationSwitcher(BuildContext context, WidgetRef ref) async {
+  Future<void> _showOrganizationSwitcher(
+      BuildContext context, WidgetRef ref) async {
     // Fetch organizations
     await ref.read(organizationsProvider.notifier).fetch();
 
@@ -372,7 +385,9 @@ class ProfilePage extends ConsumerWidget {
               final org = orgs[index];
               return ListTile(
                 leading: Icon(
-                  org.isPersonal ? Icons.person_outline : Icons.business_outlined,
+                  org.isPersonal
+                      ? Icons.person_outline
+                      : Icons.business_outlined,
                 ),
                 title: Text(org.name),
                 subtitle: org.isPersonal
@@ -407,7 +422,8 @@ class ProfilePage extends ConsumerWidget {
   }
 
   /// Show create organization dialog (B2B mode).
-  Future<void> _showCreateOrganizationDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showCreateOrganizationDialog(
+      BuildContext context, WidgetRef ref) async {
     final nameController = TextEditingController();
 
     final name = await showDialog<String>(
@@ -529,6 +545,118 @@ class ProfilePage extends ConsumerWidget {
       return '${months[date.month - 1]} ${date.day}, ${date.year}';
     } catch (e) {
       return dateStr.toString();
+    }
+  }
+
+  /// Build pending invites section for B2B users.
+  Widget _buildPendingInvitesSection(BuildContext context, WidgetRef ref) {
+    final invitesState = ref.watch(myPendingInvitesProvider);
+
+    // Fetch invites on first load
+    ref.listen(myPendingInvitesProvider, (previous, next) {});
+    if (invitesState is AsyncLoading == false &&
+        invitesState.valueOrNull?.isEmpty == true) {
+      // Trigger fetch if not loading and empty
+      Future.microtask(
+          () => ref.read(myPendingInvitesProvider.notifier).fetch());
+    }
+
+    return invitesState.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (invites) {
+        if (invites.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            _buildSectionHeader(context, 'Pending Invitations'),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.orange.shade200),
+              ),
+              color: Colors.orange.shade50,
+              child: Column(
+                children: invites.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final invite = entry.value;
+                  final orgName = invite['organization_name'] ?? 'Unknown';
+                  final role = invite['role'] ?? 'member';
+                  final invitedBy = invite['invited_by_email'] ?? 'Unknown';
+
+                  return Column(
+                    children: [
+                      if (index > 0) const Divider(height: 1, indent: 16),
+                      ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.orange.shade100,
+                          child: const Icon(Icons.mail_outline,
+                              color: Colors.orange),
+                        ),
+                        title: Text(
+                          'Join $orgName',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        subtitle: Text('As $role • from $invitedBy'),
+                        trailing: ElevatedButton(
+                          onPressed: () => _acceptInvite(context, ref, invite),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Accept'),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _acceptInvite(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> invite,
+  ) async {
+    final orgId = invite['organization_id'] as String;
+    final tokenHash = invite['token_hash'] as String;
+    final inviteId = invite['id'] as String;
+
+    try {
+      await ApiClient.I.acceptOrganizationInvite(
+        organizationId: orgId,
+        tokenHash: tokenHash,
+      );
+
+      // Remove from pending invites
+      ref.read(myPendingInvitesProvider.notifier).removeInvite(inviteId);
+
+      // Refresh organizations
+      await ref.read(organizationsProvider.notifier).fetch();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Joined ${invite['organization_name']}!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
 }

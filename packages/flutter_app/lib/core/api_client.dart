@@ -190,4 +190,67 @@ class ApiClient {
         await _dio.get('/api/v1/organizations/$organizationId/members/');
     return (resp.data as Map).cast<String, dynamic>();
   }
+
+  // ============================================================================
+  // Organization Invites API
+  // ============================================================================
+
+  /// Get pending invites for the current user (invites sent TO me).
+  Future<Map<String, dynamic>> getMyPendingInvites() async {
+    final resp = await _dio.get('/api/v1/organizations/my-invites/');
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Send an invitation to join an organization (admin only, B2B only).
+  Future<Map<String, dynamic>> sendOrganizationInvite({
+    required String organizationId,
+    required String email,
+    required String role,
+  }) async {
+    final resp = await _dio.post(
+      '/api/v1/organizations/$organizationId/invites/send/',
+      data: {
+        'invited_email': email,
+        'role': role,
+      },
+    );
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Get list of pending invites for an organization (admin only).
+  Future<Map<String, dynamic>> listOrganizationInvites(
+      String organizationId) async {
+    final resp = await _dio
+        .get('/api/v1/organizations/$organizationId/invites/');
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Accept an organization invitation using token.
+  Future<Map<String, dynamic>> acceptOrganizationInvite({
+    required String organizationId,
+    required String tokenHash,
+  }) async {
+    final resp = await _dio.post(
+      '/api/v1/organizations/$organizationId/invites/$tokenHash/accept/',
+      data: {
+        'token_hash': tokenHash,
+      },
+    );
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Update a member's role (admin only).
+  Future<Map<String, dynamic>> updateMemberRole({
+    required String organizationId,
+    required String membershipId,
+    required String role,
+  }) async {
+    final resp = await _dio.patch(
+      '/api/v1/organizations/$organizationId/members/$membershipId/',
+      data: {
+        'role': role,
+      },
+    );
+    return (resp.data as Map).cast<String, dynamic>();
+  }
 }
