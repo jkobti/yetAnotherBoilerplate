@@ -7,7 +7,7 @@ class Organization {
     required this.id,
     required this.name,
     required this.isPersonal,
-    required this.ownerId,
+    this.ownerId,
     this.role,
     this.isCurrent = false,
   });
@@ -18,7 +18,7 @@ class Organization {
       id: json['id'] as String,
       name: json['name'] as String,
       isPersonal: json['is_personal'] as bool? ?? false,
-      ownerId: json['owner_id'] as String,
+      ownerId: json['owner_id'] as String?,
       role: json['role'] as String?,
       isCurrent: json['is_current'] as bool? ?? false,
     );
@@ -27,7 +27,7 @@ class Organization {
   final String id;
   final String name;
   final bool isPersonal;
-  final String ownerId;
+  final String? ownerId;
 
   /// User's role in this organization (admin, member, billing).
   final String? role;
@@ -44,7 +44,7 @@ class Organization {
         'id': id,
         'name': name,
         'is_personal': isPersonal,
-        'owner_id': ownerId,
+        if (ownerId != null) 'owner_id': ownerId,
         if (role != null) 'role': role,
         'is_current': isCurrent,
       };

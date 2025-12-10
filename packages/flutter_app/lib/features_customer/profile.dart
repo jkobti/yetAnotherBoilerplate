@@ -1,11 +1,15 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui_kit/ui_kit.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 import '../core/api_client.dart';
 import '../core/auth/auth_state.dart';
 import '../core/config/app_config.dart';
+import '../core/organizations/organization.dart';
 import '../core/organizations/organization_provider.dart';
 import '../core/widgets/app_scaffold.dart';
 
@@ -63,24 +67,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   /// Determines if team features should be shown based on app mode and org type.
-  bool _shouldShowTeamFeatures(Map<String, dynamic>? meData) {
+  bool _shouldShowTeamFeatures(Organization? currentOrg) {
     // B2B mode always shows team features
     if (AppConfig.isB2B) return true;
 
     // B2C mode: hide for personal workspaces
-    final orgData = meData?['current_organization'] as Map<String, dynamic>?;
-    if (orgData == null) return false;
-    final isPersonal = orgData['is_personal'] as bool? ?? false;
-    return !isPersonal;
+    if (currentOrg == null) return false;
+    return !currentOrg.isPersonal;
   }
 
   /// Get section header title based on app mode.
-  String _getSettingsHeader(Map<String, dynamic>? meData) {
-    final orgData = meData?['current_organization'] as Map<String, dynamic>?;
-    if (orgData == null) return 'Settings';
+  String _getSettingsHeader(Organization? currentOrg) {
+    if (currentOrg == null) return 'Settings';
 
-    final isPersonal = orgData['is_personal'] as bool? ?? false;
-    if (isPersonal && AppConfig.isB2C) {
+    if (currentOrg.isPersonal && AppConfig.isB2C) {
       return 'Workspace Settings';
     }
     return 'Organization Settings';
@@ -89,6 +89,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
+    // Watch currentOrganizationProvider for immediate UI updates when organization switches
+    final currentOrgState = ref.watch(currentOrganizationProvider);
+    final currentOrg = currentOrgState.valueOrNull;
     final meData = authState.asData?.value;
 
     return AppScaffold(
@@ -199,24 +202,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                               const SizedBox(height: 24),
 
-                              // DEBUG: Show current app mode
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                color: Colors.amber.shade100,
-                                child: Text(
-                                  'DEBUG: APP_MODE=${AppConfig.isB2B ? "B2B" : "B2C"}',
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-
-                              const SizedBox(height: 24),
-
                               // Organization Section (conditional)
-                              _buildOrganizationSection(context, ref, meData),
+                              _buildOrganizationSection(
+                                  context, ref, currentOrg),
 
                               // Pending Invites Section (B2B only)
                               if (AppConfig.isB2B)
@@ -224,7 +212,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                               // Actions Section
                               _buildSectionHeader(
-                                  context, _getSettingsHeader(meData)),
+                                  context, _getSettingsHeader(currentOrg)),
                               Card(
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),
@@ -279,18 +267,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildOrganizationSection(
     BuildContext context,
     WidgetRef ref,
-    Map<String, dynamic>? meData,
+    Organization? currentOrg,
   ) {
-    final orgData = meData?['current_organization'] as Map<String, dynamic>?;
-    final showTeamFeatures = _shouldShowTeamFeatures(meData);
+    final showTeamFeatures = _shouldShowTeamFeatures(currentOrg);
 
     // In B2B mode, show org creation UI even if user has no org yet
-    if (orgData == null && !AppConfig.isB2B) {
+    if (currentOrg == null && !AppConfig.isB2B) {
       return const SizedBox.shrink();
     }
 
-    final orgName = orgData?['name']?.toString() ?? 'Workspace';
-    final isPersonal = orgData?['is_personal'] as bool? ?? false;
+    final orgName = currentOrg?.name ?? 'Workspace';
+    final isPersonal = currentOrg?.isPersonal ?? false;
 
     // Header: "Workspace" for B2C personal, "Organization" for B2B
     final sectionTitle =
@@ -310,7 +297,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           child: Column(
             children: [
               // Current workspace/org name (only if user has an org)
-              if (orgData != null) ...[
+              if (currentOrg != null) ...[
                 _buildListTile(
                   icon: isPersonal
                       ? Icons.person_outline
@@ -321,7 +308,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ],
 
               // Team Members - only in B2B or non-personal orgs
-              if (showTeamFeatures && orgData != null) ...[
+              if (showTeamFeatures && currentOrg != null) ...[
                 const Divider(height: 1, indent: 56),
                 ListTile(
                   leading: Icon(Icons.people_outline, color: Colors.grey[600]),
@@ -331,16 +318,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    final orgId = orgData['id'] as String? ?? '';
-                    if (orgId.isNotEmpty) {
-                      context.push('/organizations/$orgId/team-management');
+                    if (currentOrg.id.isNotEmpty) {
+                      context.push(
+                          '/organizations/${currentOrg.id}/team-management');
                     }
                   },
                 ),
               ],
 
               // Organization Switcher - only in B2B mode with existing org
-              if (AppConfig.isB2B && orgData != null) ...[
+              if (AppConfig.isB2B && currentOrg != null) ...[
                 const Divider(height: 1, indent: 56),
                 ListTile(
                   leading: Icon(Icons.swap_horiz, color: Colors.grey[600]),
@@ -355,7 +342,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
               // Create New Organization - always shown in B2B mode
               if (AppConfig.isB2B) ...[
-                if (orgData != null) const Divider(height: 1, indent: 56),
+                if (currentOrg != null) const Divider(height: 1, indent: 56),
                 ListTile(
                   leading: Icon(Icons.add_business_outlined,
                       color: Colors.grey[600]),
@@ -432,12 +419,29 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
 
     if (selected != null && context.mounted) {
-      await ref.read(currentOrganizationProvider.notifier).switchTo(selected);
-      await ref.read(authStateProvider.notifier).refresh();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Switched organization')),
-        );
+      try {
+        // Switch to the new organization
+        await ref.read(currentOrganizationProvider.notifier).switchTo(selected);
+
+        // Refresh user data to sync authStateProvider
+        await ref.read(authStateProvider.notifier).refresh();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Switched organization')),
+          );
+
+          // Reload the page on web to ensure all state is fresh
+          if (kIsWeb) {
+            html.window.location.reload();
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error switching organization: $e')),
+          );
+        }
       }
     }
   }

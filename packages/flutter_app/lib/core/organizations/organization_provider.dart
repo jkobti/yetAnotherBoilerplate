@@ -17,8 +17,7 @@ final organizationsProvider = StateNotifierProvider<OrganizationsNotifier,
 
 /// Provider for pending invites for the current organization.
 final organizationInvitesProvider = StateNotifierProvider<
-    OrganizationInvitesNotifier,
-    AsyncValue<List<Map<String, dynamic>>>>(
+    OrganizationInvitesNotifier, AsyncValue<List<Map<String, dynamic>>>>(
   (ref) => OrganizationInvitesNotifier(),
 );
 
@@ -37,14 +36,17 @@ class CurrentOrganizationNotifier
   }
 
   /// Switch to a different organization.
+  /// Does not set loading state to prevent UI flicker - updates directly on success.
   Future<void> switchTo(String organizationId) async {
-    state = const AsyncValue.loading();
+    final previousValue = state.valueOrNull;
     try {
       final data = await ApiClient.I.switchOrganization(organizationId);
       final orgData = data['data'] as Map<String, dynamic>;
       state = AsyncValue.data(Organization.fromJson(orgData));
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+    } catch (e) {
+      // On error, keep the previous value and rethrow
+      state = AsyncValue.data(previousValue);
+      rethrow;
     }
   }
 
@@ -138,8 +140,7 @@ class OrganizationInvitesNotifier
 }
 
 /// Provider for pending invites sent TO the current user.
-final myPendingInvitesProvider = StateNotifierProvider<
-    MyPendingInvitesNotifier,
+final myPendingInvitesProvider = StateNotifierProvider<MyPendingInvitesNotifier,
     AsyncValue<List<Map<String, dynamic>>>>(
   (ref) => MyPendingInvitesNotifier(),
 );
