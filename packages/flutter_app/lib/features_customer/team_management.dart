@@ -80,7 +80,7 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: selectedRole,
+                value: selectedRole,
                 decoration: const InputDecoration(
                   labelText: 'Role',
                   border: OutlineInputBorder(),
@@ -338,6 +338,7 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
     final role = member['role'] as String? ?? 'member';
     final firstName = member['first_name'] as String? ?? '';
     final lastName = member['last_name'] as String? ?? '';
+    final membershipId = member['id'] as String? ?? '';
 
     final displayName = firstName.isNotEmpty || lastName.isNotEmpty
         ? '$firstName $lastName'.trim()
@@ -378,7 +379,7 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
             PopupMenuItem(
               child: const Text('Make Admin'),
               onTap: () => _updateMemberRole(
-                member['id'],
+                membershipId,
                 'admin',
               ),
             ),
@@ -386,13 +387,65 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
             PopupMenuItem(
               child: const Text('Make Member'),
               onTap: () => _updateMemberRole(
-                member['id'],
+                membershipId,
                 'member',
               ),
             ),
+          PopupMenuItem(
+            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+            onTap: () => _confirmRemoveMember(membershipId, email),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmRemoveMember(String membershipId, String email) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Member'),
+        content: Text('Are you sure you want to remove $email from this organization?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _removeMember(membershipId);
+    }
+  }
+
+  Future<void> _removeMember(String membershipId) async {
+    try {
+      await ApiClient.I.removeMember(
+        organizationId: widget.organizationId,
+        membershipId: membershipId,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Member removed')),
+        );
+        // Refresh members
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _updateMemberRole(String membershipId, String newRole) async {
@@ -509,33 +562,62 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
           ),
         ],
       ),
-      trailing: PopupMenuButton(
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            child: const Text('Resend'),
-            onTap: () => _resendInvite(inviteId),
-          ),
-          PopupMenuItem(
-            child: const Text('Revoke', style: TextStyle(color: Colors.red)),
-            onTap: () => _revokeInvite(inviteId),
-          ),
-        ],
+      trailing: IconButton(
+        icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+        tooltip: 'Cancel invitation',
+        onPressed: () => _confirmRevokeInvite(inviteId, email),
       ),
     );
   }
 
-  Future<void> _resendInvite(String inviteId) async {
-    // Note: Resend endpoint would need to be implemented in the API
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Resend invite feature coming soon')),
+  Future<void> _confirmRevokeInvite(String inviteId, String email) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Invitation'),
+        content: Text('Are you sure you want to cancel the invitation to $email?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
     );
+
+    if (confirmed == true) {
+      await _revokeInvite(inviteId);
+    }
   }
 
   Future<void> _revokeInvite(String inviteId) async {
-    // Note: Revoke endpoint would need to be implemented in the API
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Revoke invite feature coming soon')),
-    );
+    try {
+      await ApiClient.I.revokeOrganizationInvite(
+        organizationId: widget.organizationId,
+        inviteId: inviteId,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invitation cancelled')),
+        );
+        // Refresh invites
+        ref
+            .read(organizationInvitesProvider.notifier)
+            .fetch(widget.organizationId);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
   }
 
   String _formatDate(String dateString) {

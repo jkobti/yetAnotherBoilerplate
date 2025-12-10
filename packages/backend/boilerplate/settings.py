@@ -183,11 +183,10 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100/day",
-        "user": "1000/day",
+        "anon": "1000/minute",
+        "user": "5000/minute",
         # Used by admin endpoints via throttle_scope = 'admin'
-        # Keep this tight by default to make abuse obvious in dev and tests.
-        "admin": "100/minute",
+        "admin": "500/minute",
     },
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",

@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../theme/theme_controller.dart';
 import '../../core/push/push_service.dart';
 import '../auth/auth_state.dart';
+import '../config/app_config.dart';
 import 'app_footer.dart';
+import 'organization_dropdown.dart';
 
 class AppScaffold extends ConsumerWidget {
   final String title;
@@ -48,6 +50,11 @@ class AppScaffold extends ConsumerWidget {
         actions: [
           _ThemeSelector(themeMode: themeMode),
           const SizedBox(width: 8),
+          // Organization dropdown (B2B only, logged in only)
+          if (me != null && AppConfig.isB2B) ...[
+            const OrganizationDropdown(),
+            const SizedBox(width: 8),
+          ],
           // Primary nav
           if (_isWide(context))
             ..._navActions(context, ref, me)

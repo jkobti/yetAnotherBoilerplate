@@ -253,4 +253,26 @@ class ApiClient {
     );
     return (resp.data as Map).cast<String, dynamic>();
   }
+
+  /// Remove a member from an organization (admin only).
+  Future<Map<String, dynamic>> removeMember({
+    required String organizationId,
+    required String membershipId,
+  }) async {
+    final resp = await _dio.delete(
+      '/api/v1/organizations/$organizationId/members/$membershipId/',
+    );
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Revoke/cancel a pending organization invite (admin only).
+  Future<Map<String, dynamic>> revokeOrganizationInvite({
+    required String organizationId,
+    required String inviteId,
+  }) async {
+    final resp = await _dio.delete(
+      '/api/v1/organizations/$organizationId/invites/$inviteId/revoke/',
+    );
+    return (resp.data as Map).cast<String, dynamic>();
+  }
 }

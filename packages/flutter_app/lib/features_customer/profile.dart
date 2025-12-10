@@ -9,8 +9,29 @@ import '../core/config/app_config.dart';
 import '../core/organizations/organization_provider.dart';
 import '../core/widgets/app_scaffold.dart';
 
-class ProfilePage extends ConsumerWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends ConsumerState<ProfilePage> {
+  bool _hasFetchedInvites = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch pending invites on first load (B2B only)
+    if (AppConfig.isB2B) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_hasFetchedInvites) {
+          _hasFetchedInvites = true;
+          ref.read(myPendingInvitesProvider.notifier).fetch();
+        }
+      });
+    }
+  }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
@@ -66,7 +87,7 @@ class ProfilePage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
     final meData = authState.asData?.value;
 
@@ -551,15 +572,6 @@ class ProfilePage extends ConsumerWidget {
   /// Build pending invites section for B2B users.
   Widget _buildPendingInvitesSection(BuildContext context, WidgetRef ref) {
     final invitesState = ref.watch(myPendingInvitesProvider);
-
-    // Fetch invites on first load
-    ref.listen(myPendingInvitesProvider, (previous, next) {});
-    if (invitesState is AsyncLoading == false &&
-        invitesState.valueOrNull?.isEmpty == true) {
-      // Trigger fetch if not loading and empty
-      Future.microtask(
-          () => ref.read(myPendingInvitesProvider.notifier).fetch());
-    }
 
     return invitesState.when(
       loading: () => const SizedBox.shrink(),

@@ -445,3 +445,109 @@ class MembershipRoleUpdateView(APIView):
                 },
             }
         )
+
+    def delete(self, request, org_id, membership_id):
+        """Remove a member from an organization (admin only)."""
+        org = get_object_or_404(Organization, id=org_id, members=request.user)
+
+        # Check admin role
+        requester_membership = Membership.objects.get(
+            user=request.user, organization=org
+        )
+        if requester_membership.role != Membership.ROLE_ADMIN:
+            return Response(
+                {"error": "Only admins can remove members"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Get target membership
+        target_membership = get_object_or_404(
+            Membership,
+            id=membership_id,
+            organization=org,
+        )
+
+        # Prevent removing org owner
+        if target_membership.user == org.owner:
+            return Response(
+                {"error": "Cannot remove the organization owner"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Prevent self-removal
+        if target_membership.user == request.user:
+            return Response(
+                {"error": "Cannot remove yourself. Use leave organization instead."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        removed_user = target_membership.user
+        removed_email = removed_user.email
+
+        # Delete membership
+        target_membership.delete()
+
+        # Clear current org if it was this one
+        if removed_user.current_organization == org:
+            # Find another org or set to None
+            other_membership = Membership.objects.filter(user=removed_user).first()
+            removed_user.current_organization = (
+                other_membership.organization if other_membership else None
+            )
+            removed_user.save(update_fields=["current_organization"])
+
+        # Notify the removed user
+        Notification.objects.create(
+            recipient=removed_user,
+            type="removed_from_org",
+            message=f"You were removed from {org.name}",
+            target_url="/organizations",
+        )
+
+        return Response(
+            {
+                "message": "Member removed",
+                "data": {
+                    "email": removed_email,
+                },
+            }
+        )
+
+
+class OrganizationInviteRevokeView(APIView):
+    """Revoke/cancel a pending organization invite (admin only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def delete(self, request, org_id, invite_id):
+        org = get_object_or_404(Organization, id=org_id, members=request.user)
+
+        # Check admin role
+        membership = Membership.objects.get(user=request.user, organization=org)
+        if membership.role != Membership.ROLE_ADMIN:
+            return Response(
+                {"error": "Only admins can revoke invites"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Get pending invite
+        invite = get_object_or_404(
+            OrganizationInvite,
+            id=invite_id,
+            organization=org,
+            status=OrganizationInvite.STATUS_PENDING,
+        )
+
+        invite.status = OrganizationInvite.STATUS_REVOKED
+        invite.save(update_fields=["status"])
+
+        return Response(
+            {
+                "message": "Invite revoked",
+                "data": {
+                    "id": str(invite.id),
+                    "invited_email": invite.invited_email,
+                },
+            }
+        )
