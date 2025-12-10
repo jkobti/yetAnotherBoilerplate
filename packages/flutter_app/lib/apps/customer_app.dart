@@ -15,10 +15,24 @@ class CustomerApp extends ConsumerStatefulWidget {
 
 class _CustomerAppState extends ConsumerState<CustomerApp>
     with WidgetsBindingObserver {
+  MediaQueryData? _lastMediaQuery;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final current = MediaQuery.of(context);
+    // Rebuild if platform brightness changes while app is running
+    if (_lastMediaQuery != null &&
+        _lastMediaQuery!.platformBrightness != current.platformBrightness) {
+      setState(() {});
+    }
+    _lastMediaQuery = current;
   }
 
   @override
