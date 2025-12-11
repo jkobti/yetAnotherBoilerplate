@@ -144,20 +144,12 @@ class OrganizationSwitchView(APIView):
 
 
 class OrganizationMembersView(APIView):
-    """List members of an organization (requires admin role)."""
+    """List members of an organization (requires membership)."""
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request, org_id):
         org = get_object_or_404(Organization, id=org_id, members=request.user)
-
-        # Check if user has admin role
-        membership = Membership.objects.get(user=request.user, organization=org)
-        if membership.role not in [Membership.ROLE_ADMIN, Membership.ROLE_BILLING]:
-            return Response(
-                {"error": "Admin access required"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
 
         members = []
         for m in Membership.objects.filter(organization=org).select_related("user"):
