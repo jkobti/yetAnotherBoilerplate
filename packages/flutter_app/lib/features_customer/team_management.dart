@@ -284,8 +284,11 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
     final currentOrgState = ref.watch(currentOrganizationProvider);
     final currentUserRole = currentOrgState.valueOrNull?.role ?? 'member';
 
-    return FutureBuilder<Map<String, dynamic>>(
-      future: ApiClient.I.getOrganizationMembers(widget.organizationId),
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([
+        ApiClient.I.getOrganizationMembers(widget.organizationId),
+        ApiClient.I.getOrganization(widget.organizationId),
+      ]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -309,8 +312,11 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
           );
         }
 
-        final data = snapshot.data ?? {};
+        final data = snapshot.data?[0] as Map<String, dynamic>? ?? {};
+        final orgData = snapshot.data?[1] as Map<String, dynamic>? ?? {};
         final members = (data['data'] as List?) ?? [];
+        final ownerId =
+            (orgData['data'] as Map<String, dynamic>?)?['owner_id'] as String?;
 
         if (members.isEmpty) {
           return Center(
@@ -334,19 +340,24 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
           separatorBuilder: (_, __) => const Divider(),
           itemBuilder: (context, index) {
             final member = members[index] as Map<String, dynamic>;
-            return _buildMemberTile(member, currentUserRole);
+            return _buildMemberTile(member, currentUserRole, ownerId);
           },
         );
       },
     );
   }
 
-  Widget _buildMemberTile(Map<String, dynamic> member, String currentUserRole) {
+  Widget _buildMemberTile(
+    Map<String, dynamic> member,
+    String currentUserRole,
+    String? organizationOwnerId,
+  ) {
     final email = member['email'] as String? ?? 'Unknown';
     final role = member['role'] as String? ?? 'member';
     final firstName = member['first_name'] as String? ?? '';
     final lastName = member['last_name'] as String? ?? '';
     final membershipId = member['id'] as String? ?? '';
+    final userId = member['user_id'] as String? ?? '';
 
     final displayName = firstName.isNotEmpty || lastName.isNotEmpty
         ? '$firstName $lastName'.trim()
@@ -354,6 +365,8 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
 
     // Only allow admin users to manage other members
     final isCurrentUserAdmin = currentUserRole == 'admin';
+    // Check if this member is the organization owner
+    final isOwner = userId == organizationOwnerId;
 
     return ListTile(
       leading: CircleAvatar(
@@ -384,33 +397,49 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
           ),
         ],
       ),
-      trailing: isCurrentUserAdmin
-          ? PopupMenuButton(
-              itemBuilder: (context) => [
-                if (role != 'admin')
-                  PopupMenuItem(
-                    child: const Text('Make Admin'),
-                    onTap: () => _updateMemberRole(
-                      membershipId,
-                      'admin',
-                    ),
-                  ),
-                if (role != 'member')
-                  PopupMenuItem(
-                    child: const Text('Make Member'),
-                    onTap: () => _updateMemberRole(
-                      membershipId,
-                      'member',
-                    ),
-                  ),
-                PopupMenuItem(
-                  child:
-                      const Text('Remove', style: TextStyle(color: Colors.red)),
-                  onTap: () => _confirmRemoveMember(membershipId, email),
+      trailing: isOwner
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'Owner',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
                 ),
-              ],
+              ),
             )
-          : null,
+          : isCurrentUserAdmin
+              ? PopupMenuButton(
+                  itemBuilder: (context) => [
+                    if (role != 'admin')
+                      PopupMenuItem(
+                        child: const Text('Make Admin'),
+                        onTap: () => _updateMemberRole(
+                          membershipId,
+                          'admin',
+                        ),
+                      ),
+                    if (role != 'member')
+                      PopupMenuItem(
+                        child: const Text('Make Member'),
+                        onTap: () => _updateMemberRole(
+                          membershipId,
+                          'member',
+                        ),
+                      ),
+                    PopupMenuItem(
+                      child: const Text('Remove',
+                          style: TextStyle(color: Colors.red)),
+                      onTap: () => _confirmRemoveMember(membershipId, email),
+                    ),
+                  ],
+                )
+              : null,
     );
   }
 
