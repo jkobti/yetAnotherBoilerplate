@@ -510,6 +510,53 @@ class MembershipRoleUpdateView(APIView):
         )
 
 
+class OrganizationLeaveView(APIView):
+    """Allow a user to leave an organization (cannot be performed by owner)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, org_id):
+        org = get_object_or_404(Organization, id=org_id, members=request.user)
+
+        # Get user's membership
+        membership = get_object_or_404(
+            Membership,
+            user=request.user,
+            organization=org,
+        )
+
+        # Prevent owner from leaving
+        if request.user == org.owner:
+            return Response(
+                {
+                    "error": "Organization owner cannot leave. Transfer ownership or delete the organization instead."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Delete membership
+        membership.delete()
+
+        # Clear current org if it was this one
+        if request.user.current_organization == org:
+            # Find another org or set to None
+            other_membership = Membership.objects.filter(user=request.user).first()
+            request.user.current_organization = (
+                other_membership.organization if other_membership else None
+            )
+            request.user.save(update_fields=["current_organization"])
+
+        return Response(
+            {
+                "message": f"Successfully left {org.name}",
+                "data": {
+                    "organization_name": org.name,
+                },
+            }
+        )
+
+
 class OrganizationInviteRevokeView(APIView):
     """Revoke/cancel a pending organization invite (admin only)."""
 

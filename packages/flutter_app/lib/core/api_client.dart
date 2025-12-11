@@ -220,8 +220,8 @@ class ApiClient {
   /// Get list of pending invites for an organization (admin only).
   Future<Map<String, dynamic>> listOrganizationInvites(
       String organizationId) async {
-    final resp = await _dio
-        .get('/api/v1/organizations/$organizationId/invites/');
+    final resp =
+        await _dio.get('/api/v1/organizations/$organizationId/invites/');
     return (resp.data as Map).cast<String, dynamic>();
   }
 
@@ -272,6 +272,14 @@ class ApiClient {
   }) async {
     final resp = await _dio.delete(
       '/api/v1/organizations/$organizationId/invites/$inviteId/revoke/',
+    );
+    return (resp.data as Map).cast<String, dynamic>();
+  }
+
+  /// Leave an organization (cannot be performed by organization owner).
+  Future<Map<String, dynamic>> leaveOrganization(String organizationId) async {
+    final resp = await _dio.post(
+      '/api/v1/organizations/$organizationId/leave/',
     );
     return (resp.data as Map).cast<String, dynamic>();
   }

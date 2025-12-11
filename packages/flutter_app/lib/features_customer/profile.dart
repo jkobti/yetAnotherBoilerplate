@@ -204,7 +204,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                               // Organization Section (conditional)
                               _buildOrganizationSection(
-                                  context, ref, currentOrg),
+                                  context, ref, currentOrg, meData),
 
                               // Pending Invites Section (B2B only)
                               if (AppConfig.isB2B)
@@ -268,6 +268,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     BuildContext context,
     WidgetRef ref,
     Organization? currentOrg,
+    Map<String, dynamic>? meData,
   ) {
     final showTeamFeatures = _shouldShowTeamFeatures(currentOrg);
 
@@ -352,6 +353,29 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showCreateOrganizationDialog(context, ref),
+                ),
+              ],
+
+              // Leave Organization - shown if user is not the owner
+              if (AppConfig.isB2B && currentOrg != null) ...[
+                const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: Icon(Icons.exit_to_app, color: Colors.grey[600]),
+                  title: Text(
+                    'Leave Organization',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: (meData?['id'] == currentOrg.ownerId)
+                          ? Colors.grey[400]
+                          : null,
+                    ),
+                  ),
+                  enabled: meData?['id'] != currentOrg.ownerId,
+                  onTap: (meData?['id'] != currentOrg.ownerId)
+                      ? () =>
+                          _showLeaveOrganizationDialog(context, ref, currentOrg)
+                      : null,
                 ),
               ],
             ],
@@ -497,6 +521,59 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error creating organization: $e')),
           );
+        }
+      }
+    }
+  }
+
+  Future<void> _showLeaveOrganizationDialog(
+      BuildContext context, WidgetRef ref, Organization currentOrg) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave Organization?'),
+        content: Text(
+          'Are you sure you want to leave "${currentOrg.name}"? You will need to be invited again to rejoin.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed ?? false) {
+      if (context.mounted) {
+        try {
+          await ApiClient.I.leaveOrganization(currentOrg.id);
+
+          // Refresh organizations and auth state
+          await ref.read(organizationsProvider.notifier).fetch();
+          await ref.read(authStateProvider.notifier).refresh();
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Left organization: ${currentOrg.name}')),
+            );
+
+            // Reload page on web to ensure fresh state
+            if (kIsWeb) {
+              html.window.location.reload();
+            }
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error leaving organization: $e')),
+            );
+          }
         }
       }
     }
