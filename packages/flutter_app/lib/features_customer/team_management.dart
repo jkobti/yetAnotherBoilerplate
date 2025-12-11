@@ -4,7 +4,6 @@ import 'package:ui_kit/ui_kit.dart';
 
 import '../core/api_client.dart';
 import '../core/config/app_config.dart';
-import '../core/organizations/organization.dart';
 import '../core/organizations/organization_provider.dart';
 import '../core/widgets/app_scaffold.dart';
 
@@ -80,7 +79,7 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedRole,
+                initialValue: selectedRole,
                 decoration: const InputDecoration(
                   labelText: 'Role',
                   border: OutlineInputBorder(),
@@ -166,6 +165,9 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
   @override
   Widget build(BuildContext context) {
     final invitesState = ref.watch(organizationInvitesProvider);
+    final currentOrgState = ref.watch(currentOrganizationProvider);
+    final currentUserRole = currentOrgState.valueOrNull?.role ?? 'member';
+    final isCurrentUserAdmin = currentUserRole == 'admin';
 
     if (!AppConfig.isB2B) {
       return const AppScaffold(
@@ -267,15 +269,21 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showInviteDialog(context),
-        tooltip: 'Invite member',
-        child: const Icon(Icons.person_add),
-      ),
+      floatingActionButton: isCurrentUserAdmin
+          ? FloatingActionButton(
+              onPressed: () => _showInviteDialog(context),
+              tooltip: 'Invite member',
+              child: const Icon(Icons.person_add),
+            )
+          : null,
     );
   }
 
   Widget _buildMembersTab() {
+    // Get current user's role from the organization
+    final currentOrgState = ref.watch(currentOrganizationProvider);
+    final currentUserRole = currentOrgState.valueOrNull?.role ?? 'member';
+
     return FutureBuilder<Map<String, dynamic>>(
       future: ApiClient.I.getOrganizationMembers(widget.organizationId),
       builder: (context, snapshot) {
@@ -326,14 +334,14 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
           separatorBuilder: (_, __) => const Divider(),
           itemBuilder: (context, index) {
             final member = members[index] as Map<String, dynamic>;
-            return _buildMemberTile(member);
+            return _buildMemberTile(member, currentUserRole);
           },
         );
       },
     );
   }
 
-  Widget _buildMemberTile(Map<String, dynamic> member) {
+  Widget _buildMemberTile(Map<String, dynamic> member, String currentUserRole) {
     final email = member['email'] as String? ?? 'Unknown';
     final role = member['role'] as String? ?? 'member';
     final firstName = member['first_name'] as String? ?? '';
@@ -343,6 +351,9 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
     final displayName = firstName.isNotEmpty || lastName.isNotEmpty
         ? '$firstName $lastName'.trim()
         : email;
+
+    // Only allow admin users to manage other members
+    final isCurrentUserAdmin = currentUserRole == 'admin';
 
     return ListTile(
       leading: CircleAvatar(
@@ -373,30 +384,33 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
           ),
         ],
       ),
-      trailing: PopupMenuButton(
-        itemBuilder: (context) => [
-          if (role != 'admin')
-            PopupMenuItem(
-              child: const Text('Make Admin'),
-              onTap: () => _updateMemberRole(
-                membershipId,
-                'admin',
-              ),
-            ),
-          if (role != 'member')
-            PopupMenuItem(
-              child: const Text('Make Member'),
-              onTap: () => _updateMemberRole(
-                membershipId,
-                'member',
-              ),
-            ),
-          PopupMenuItem(
-            child: const Text('Remove', style: TextStyle(color: Colors.red)),
-            onTap: () => _confirmRemoveMember(membershipId, email),
-          ),
-        ],
-      ),
+      trailing: isCurrentUserAdmin
+          ? PopupMenuButton(
+              itemBuilder: (context) => [
+                if (role != 'admin')
+                  PopupMenuItem(
+                    child: const Text('Make Admin'),
+                    onTap: () => _updateMemberRole(
+                      membershipId,
+                      'admin',
+                    ),
+                  ),
+                if (role != 'member')
+                  PopupMenuItem(
+                    child: const Text('Make Member'),
+                    onTap: () => _updateMemberRole(
+                      membershipId,
+                      'member',
+                    ),
+                  ),
+                PopupMenuItem(
+                  child:
+                      const Text('Remove', style: TextStyle(color: Colors.red)),
+                  onTap: () => _confirmRemoveMember(membershipId, email),
+                ),
+              ],
+            )
+          : null,
     );
   }
 
@@ -405,7 +419,8 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove Member'),
-        content: Text('Are you sure you want to remove $email from this organization?'),
+        content: Text(
+            'Are you sure you want to remove $email from this organization?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -575,7 +590,8 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Invitation'),
-        content: Text('Are you sure you want to cancel the invitation to $email?'),
+        content:
+            Text('Are you sure you want to cancel the invitation to $email?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

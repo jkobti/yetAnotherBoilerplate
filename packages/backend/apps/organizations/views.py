@@ -131,6 +131,9 @@ class OrganizationSwitchView(APIView):
         request.user.current_organization = org
         request.user.save(update_fields=["current_organization"])
 
+        # Get the user's role in this organization
+        membership = Membership.objects.get(user=request.user, organization=org)
+
         return Response(
             {
                 "message": "Switched to organization",
@@ -138,6 +141,7 @@ class OrganizationSwitchView(APIView):
                     "id": str(org.id),
                     "name": org.name,
                     "is_personal": org.is_personal,
+                    "role": membership.role,
                 },
             }
         )
