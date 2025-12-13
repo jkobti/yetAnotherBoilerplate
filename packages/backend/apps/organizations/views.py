@@ -557,6 +557,67 @@ class OrganizationLeaveView(APIView):
         )
 
 
+class OrganizationCloseView(APIView):
+    """Close (delete) an organization. Only the owner can perform this action."""
+
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def delete(self, request, org_id):
+        org = get_object_or_404(Organization, id=org_id, members=request.user)
+
+        # Only the owner can close the organization
+        if request.user != org.owner:
+            return Response(
+                {"error": "Only the organization owner can close the organization."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Cannot delete personal organizations
+        if org.is_personal:
+            return Response(
+                {"error": "Personal workspaces cannot be closed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Verify organization name for safety
+        provided_name = request.data.get("name")
+        if provided_name != org.name:
+            return Response(
+                {
+                    "error": "Organization name does not match. Please enter the exact name to confirm."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        org_name = org.name
+
+        # Clear current org for all members
+        User = get_user_model()
+        users_to_update = User.objects.filter(current_organization=org)
+        for user in users_to_update:
+            # Find another org for each user or set to None
+            other_membership = (
+                Membership.objects.filter(user=user).exclude(organization=org).first()
+            )
+            user.current_organization = (
+                other_membership.organization if other_membership else None
+            )
+            user.save(update_fields=["current_organization"])
+
+        # Delete the organization (cascade will delete memberships, invites, etc.)
+        org.delete()
+
+        return Response(
+            {
+                "message": f"Organization '{org_name}' has been closed",
+                "data": {
+                    "organization_name": org_name,
+                },
+            }
+        )
+
+
 class OrganizationInviteRevokeView(APIView):
     """Revoke/cancel a pending organization invite (admin only)."""
 

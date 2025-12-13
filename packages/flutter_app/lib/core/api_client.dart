@@ -283,4 +283,19 @@ class ApiClient {
     );
     return (resp.data as Map).cast<String, dynamic>();
   }
+
+  /// Close (delete) an organization. Only the owner can perform this action.
+  /// Requires the organization name to be provided for confirmation.
+  Future<Map<String, dynamic>> closeOrganization({
+    required String organizationId,
+    required String organizationName,
+  }) async {
+    final resp = await _dio.delete(
+      '/api/v1/organizations/$organizationId/close/',
+      data: {
+        'name': organizationName,
+      },
+    );
+    return (resp.data as Map).cast<String, dynamic>();
+  }
 }

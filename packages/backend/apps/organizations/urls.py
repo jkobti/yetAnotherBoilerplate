@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     MembershipRoleUpdateView,
     MyPendingInvitesView,
+    OrganizationCloseView,
     OrganizationCreateView,
     OrganizationDetailView,
     OrganizationInviteAcceptView,
@@ -24,6 +25,7 @@ urlpatterns = [
     path("<uuid:org_id>/", OrganizationDetailView.as_view(), name="detail"),
     path("<uuid:org_id>/switch/", OrganizationSwitchView.as_view(), name="switch"),
     path("<uuid:org_id>/leave/", OrganizationLeaveView.as_view(), name="leave"),
+    path("<uuid:org_id>/close/", OrganizationCloseView.as_view(), name="close"),
     path("<uuid:org_id>/members/", OrganizationMembersView.as_view(), name="members"),
     path(
         "<uuid:org_id>/members/<uuid:membership_id>/",

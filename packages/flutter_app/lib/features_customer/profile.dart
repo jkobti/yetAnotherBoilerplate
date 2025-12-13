@@ -355,33 +355,95 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   onTap: () => _showCreateOrganizationDialog(context, ref),
                 ),
               ],
-
-              // Leave Organization - shown if user is not the owner
-              if (AppConfig.isB2B && currentOrg != null) ...[
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: Icon(Icons.exit_to_app, color: Colors.grey[600]),
-                  title: Text(
-                    'Leave Organization',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: (meData?['id'] == currentOrg.ownerId)
-                          ? Colors.grey[400]
-                          : null,
-                    ),
-                  ),
-                  enabled: meData?['id'] != currentOrg.ownerId,
-                  onTap: (meData?['id'] != currentOrg.ownerId)
-                      ? () =>
-                          _showLeaveOrganizationDialog(context, ref, currentOrg)
-                      : null,
-                ),
-              ],
             ],
           ),
         ),
         const SizedBox(height: 24),
+
+        // Danger Zone - shown for organization owners
+        if (AppConfig.isB2B &&
+            currentOrg != null &&
+            meData?['id'] == currentOrg.ownerId) ...[
+          _buildSectionHeader(context, 'Danger Zone'),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).brightness == Brightness.light
+                    ? Colors.red.shade200
+                    : Colors.red.shade900,
+              ),
+            ),
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.red.shade50
+                : Colors.red.shade900.withOpacity(0.2),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(
+                    Icons.delete_forever,
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.red.shade700
+                        : Colors.red.shade300,
+                  ),
+                  title: Text(
+                    'Close Organization',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.red.shade700
+                          : Colors.red.shade300,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Permanently delete this organization',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.grey.shade700
+                          : Colors.grey.shade400,
+                    ),
+                  ),
+                  onTap: () =>
+                      _showCloseOrganizationDialog(context, ref, currentOrg),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+        ]
+        // Leave Organization - shown if user is not the owner
+        else if (AppConfig.isB2B && currentOrg != null) ...[
+          _buildSectionHeader(context, 'Actions'),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.exit_to_app, color: Colors.grey[600]),
+                  title: const Text(
+                    'Leave Organization',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () =>
+                      _showLeaveOrganizationDialog(context, ref, currentOrg),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
       ],
     );
   }
@@ -576,6 +638,157 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           }
         }
       }
+    }
+  }
+
+  Future<void> _showCloseOrganizationDialog(
+      BuildContext context, WidgetRef ref, Organization currentOrg) async {
+    final nameController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning,
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Colors.red.shade700
+                  : Colors.red.shade300,
+            ),
+            const SizedBox(width: 8),
+            const Text('Close Organization?'),
+          ],
+        ),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This will permanently delete "${currentOrg.name}" and remove all members. This action cannot be undone.',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'To confirm, please type the organization name:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Organization Name',
+                  hintText: 'Type "${currentOrg.name}" to confirm',
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  border: const OutlineInputBorder(),
+                  errorMaxLines: 2,
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the organization name';
+                  }
+                  if (value != currentOrg.name) {
+                    return 'Name does not match';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              nameController.dispose();
+              Navigator.of(context).pop(false);
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                nameController.dispose();
+                Navigator.of(context).pop(true);
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).brightness == Brightness.light
+                  ? Colors.red.shade700
+                  : Colors.red.shade800,
+            ),
+            child: const Text('Close Organization'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed ?? false) {
+      if (context.mounted) {
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+
+        try {
+          await ApiClient.I.closeOrganization(
+            organizationId: currentOrg.id,
+            organizationName: currentOrg.name,
+          );
+
+          // Refresh organizations and auth state
+          await ref.read(organizationsProvider.notifier).fetch();
+          await ref.read(authStateProvider.notifier).refresh();
+
+          if (context.mounted) {
+            // Dismiss loading
+            Navigator.of(context).pop();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content:
+                    Text('Organization "${currentOrg.name}" has been closed'),
+                backgroundColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Colors.red.shade700
+                        : Colors.red.shade800,
+              ),
+            );
+
+            // Reload page on web to ensure fresh state
+            if (kIsWeb) {
+              html.window.location.reload();
+            }
+          }
+        } catch (e) {
+          if (context.mounted) {
+            // Dismiss loading
+            Navigator.of(context).pop();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error closing organization: $e'),
+                backgroundColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Colors.red.shade700
+                        : Colors.red.shade800,
+              ),
+            );
+          }
+        }
+      }
+    } else {
+      nameController.dispose();
     }
   }
 
