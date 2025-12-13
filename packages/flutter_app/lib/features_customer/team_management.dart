@@ -186,7 +186,9 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
         children: [
           // Tab switcher
           Container(
-            color: Colors.grey[100],
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.grey[100]
+                : Colors.grey[900],
             child: Row(
               children: [
                 Expanded(
@@ -204,16 +206,22 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
                         border: Border(
                           bottom: BorderSide(
                             color: _currentPage == 0
-                                ? Colors.blue
+                                ? Theme.of(context).primaryColor
                                 : Colors.transparent,
                             width: 3,
                           ),
                         ),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           'Members',
-                          style: TextStyle(fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.black87
+                                    : Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -234,16 +242,22 @@ class _TeamManagementPageState extends ConsumerState<TeamManagementPage> {
                         border: Border(
                           bottom: BorderSide(
                             color: _currentPage == 1
-                                ? Colors.blue
+                                ? Theme.of(context).primaryColor
                                 : Colors.transparent,
                             width: 3,
                           ),
                         ),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           'Pending Invites',
-                          style: TextStyle(fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.black87
+                                    : Colors.white,
+                          ),
                         ),
                       ),
                     ),
