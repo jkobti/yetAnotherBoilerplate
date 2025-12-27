@@ -1144,7 +1144,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         subtitle,
         style: TextStyle(
           fontSize: 14,
-          color: subtitleColor ?? Colors.grey[800],
+          color: subtitleColor ??
+              (Theme.of(context).brightness == Brightness.light
+                  ? Colors.grey.shade800
+                  : Colors.grey.shade200),
         ),
       ),
     );
@@ -1219,9 +1222,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.orange.shade200),
+                side: BorderSide(
+                  color: Theme.of(context).brightness == Brightness.light
+                      ? Colors.orange.shade200
+                      : Colors.orange.shade700,
+                ),
               ),
-              color: Colors.orange.shade50,
+              color: Theme.of(context).brightness == Brightness.light
+                  ? Colors.orange.shade50
+                  : Colors.orange.shade900.withOpacity(0.2),
               child: Column(
                 children: invites.asMap().entries.map((entry) {
                   final index = entry.key;
@@ -1243,7 +1252,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           'Join $orgName',
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
-                        subtitle: Text('As $role • from $invitedBy'),
+                        subtitle: Text(
+                          'As $role • from $invitedBy',
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade200,
+                          ),
+                        ),
                         trailing: ElevatedButton(
                           onPressed: () => _acceptInvite(context, ref, invite),
                           style: ElevatedButton.styleFrom(
