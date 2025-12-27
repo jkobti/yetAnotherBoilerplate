@@ -96,6 +96,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return AppScaffold(
       title: 'Profile',
+      // Add key to force rebuild when organization changes
+      key: ValueKey(currentOrg?.id),
       body: authState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : authState.hasError
@@ -128,6 +130,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                     )
                   : SingleChildScrollView(
+                      // Force rebuild when organization changes
+                      key:
+                          ValueKey('profile_${currentOrg?.id}_${meData['id']}'),
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 600),
@@ -272,6 +277,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   ) {
     final showTeamFeatures = _shouldShowTeamFeatures(currentOrg);
 
+    // Check ownership - convert both to strings to avoid type mismatch
+    final myId = meData?['id']?.toString();
+    final orgOwnerId = currentOrg?.ownerId?.toString();
+    final isOwner = myId != null && orgOwnerId != null && myId == orgOwnerId;
+
     // In B2B mode, show org creation UI even if user has no org yet
     if (currentOrg == null && !AppConfig.isB2B) {
       return const SizedBox.shrink();
@@ -361,9 +371,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         const SizedBox(height: 24),
 
         // Danger Zone - shown for organization owners
-        if (AppConfig.isB2B &&
-            currentOrg != null &&
-            meData?['id'] == currentOrg.ownerId) ...[
+        if (AppConfig.isB2B && currentOrg != null && isOwner) ...[
           _buildSectionHeader(context, 'Danger Zone'),
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

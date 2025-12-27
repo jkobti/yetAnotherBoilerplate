@@ -141,6 +141,7 @@ class OrganizationSwitchView(APIView):
                     "id": str(org.id),
                     "name": org.name,
                     "is_personal": org.is_personal,
+                    "owner_id": str(org.owner_id),
                     "role": membership.role,
                 },
             }
