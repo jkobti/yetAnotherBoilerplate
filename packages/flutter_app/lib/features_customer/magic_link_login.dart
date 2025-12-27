@@ -79,6 +79,7 @@ class _MagicLinkLoginPageState extends ConsumerState<MagicLinkLoginPage> {
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) =>
                               (v == null || v.isEmpty) ? 'Required' : null,
+                          onFieldSubmitted: (_) => _submit(),
                         ),
                         const SizedBox(height: 16),
                         if (_error != null) ...[
@@ -130,6 +131,35 @@ class _MagicLinkLoginPageState extends ConsumerState<MagicLinkLoginPage> {
                         decoration: const InputDecoration(
                           labelText: 'Enter 8-digit code',
                         ),
+                        onSubmitted: (code) async {
+                          if (code.trim().length != 8 || _verifying) return;
+
+                          setState(() {
+                            _verifying = true;
+                            _error = null;
+                          });
+                          try {
+                            final svc = ref.read(_magicLinkServiceProvider);
+                            final data = await svc.verifyMagicLink(code.trim());
+                            final access = data['access'] as String?;
+                            final refresh = data['refresh'] as String?;
+                            if (access == null || refresh == null) {
+                              throw Exception('Malformed response');
+                            }
+                            final storage = TokenStorage();
+                            await storage.saveTokens(
+                                access: access, refresh: refresh);
+                            ApiClient.I.setAuthToken(access);
+                            await ref
+                                .read(authStateProvider.notifier)
+                                .refresh();
+                            if (mounted) context.go(widget.redirectPath);
+                          } catch (e) {
+                            setState(() => _error = ErrorHandler.parseError(e));
+                          } finally {
+                            if (mounted) setState(() => _verifying = false);
+                          }
+                        },
                       ),
                       const SizedBox(height: 8),
                       PrimaryButton(

@@ -280,6 +280,7 @@ class _ManualCodeEntryState extends State<_ManualCodeEntry> {
               if (!RegExp(r'^\d{8}$').hasMatch(v)) return 'Digits only';
               return null;
             },
+            onFieldSubmitted: (_) => _submit(),
           ),
         ),
         const SizedBox(height: 8),

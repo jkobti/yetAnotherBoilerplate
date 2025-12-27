@@ -76,6 +76,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     obscureText: true,
                     validator: (v) =>
                         (v == null || v.isEmpty) ? 'Required' : null,
+                    onFieldSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 16),
                   if (_error != null) ...[

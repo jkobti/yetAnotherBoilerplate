@@ -172,6 +172,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
+                              onSubmitted: (_) => _submitProfile(),
                             ),
                             const SizedBox(height: 24),
                             if (_error != null) ...[

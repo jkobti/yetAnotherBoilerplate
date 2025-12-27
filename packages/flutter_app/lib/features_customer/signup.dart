@@ -175,6 +175,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                     controller: _lastCtrl,
                     decoration: const InputDecoration(
                         labelText: 'Last name (optional)'),
+                    onFieldSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 16),
                   if (_error != null) ...[

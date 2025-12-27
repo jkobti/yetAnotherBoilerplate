@@ -586,6 +586,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             hintText: 'Enter team name',
           ),
           autofocus: true,
+          onSubmitted: (value) {
+            final name = value.trim();
+            if (name.isNotEmpty) {
+              Navigator.of(context).pop(name);
+            }
+          },
         ),
         actions: [
           TextButton(
@@ -735,6 +741,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     return 'Name does not match';
                   }
                   return null;
+                },
+                onFieldSubmitted: (_) {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.of(context).pop(true);
+                  }
                 },
               ),
             ],
@@ -1030,6 +1041,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         return 'Name does not match';
                       }
                       return null;
+                    },
+                    onFieldSubmitted: (_) {
+                      if (formKey.currentState!.validate()) {
+                        Navigator.of(context).pop(true);
+                      }
                     },
                   ),
                 ],

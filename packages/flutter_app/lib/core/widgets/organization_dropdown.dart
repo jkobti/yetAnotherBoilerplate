@@ -73,6 +73,32 @@ class _OrganizationDropdownState extends ConsumerState<OrganizationDropdown> {
             enabled: !isCreating,
             autofocus: true,
             textCapitalization: TextCapitalization.words,
+            onSubmitted: (value) async {
+              if (value.trim().isEmpty || isCreating) return;
+
+              setDialogState(() => isCreating = true);
+              try {
+                final org = await ref
+                    .read(organizationsProvider.notifier)
+                    .create(value.trim());
+
+                // Switch to the new organization
+                if (context.mounted) {
+                  await ref
+                      .read(currentOrganizationProvider.notifier)
+                      .switchTo(org.id);
+                  await ref.read(organizationsProvider.notifier).fetch();
+                  Navigator.pop(context);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
+                  setDialogState(() => isCreating = false);
+                }
+              }
+            },
           ),
           actions: [
             TextButton(
@@ -86,7 +112,8 @@ class _OrganizationDropdownState extends ConsumerState<OrganizationDropdown> {
                       if (nameController.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text('Please enter an organization name')),
+                              content:
+                                  Text('Please enter an organization name')),
                         );
                         return;
                       }
@@ -105,8 +132,7 @@ class _OrganizationDropdownState extends ConsumerState<OrganizationDropdown> {
                         if (context.mounted) {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text('Created "${org.name}"')),
+                            SnackBar(content: Text('Created "${org.name}"')),
                           );
                         }
                       } catch (e) {
@@ -246,7 +272,8 @@ class _OrganizationDropdownState extends ConsumerState<OrganizationDropdown> {
                         child: Text(
                           org.name.isNotEmpty ? org.name[0].toUpperCase() : '?',
                           style: TextStyle(
-                            color: org.isCurrent ? Colors.white : Colors.black87,
+                            color:
+                                org.isCurrent ? Colors.white : Colors.black87,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
