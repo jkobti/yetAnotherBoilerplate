@@ -23,6 +23,28 @@
             color: #e9eef5;
             font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
         }
+
+        /* Fix Flutter web text field duplication issue */
+        /* Hide the semantic text field overlay that causes double rendering */
+        flt-semantics input,
+        flt-semantics textarea {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        /* Ensure the actual Flutter canvas text field is visible */
+        flt-text-editing-host {
+            pointer-events: auto !important;
+        }
+
+        /* Alternative fix: make semantic inputs transparent but functional */
+        input[flt-semantic-input],
+        textarea[flt-semantic-input] {
+            color: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            outline: none !important;
+        }
     </style>
     <script src="flutter.js" defer></script>
     <!-- Firebase JS SDK for web push (compat builds for simplicity) -->
@@ -42,6 +64,8 @@
                 .loadEntrypoint({
                     // In dev we avoid service workers to simplify reloads
                     serviceWorker: { disabled: true },
+                    // Use CanvasKit renderer to avoid text duplication issues
+                    renderer: "canvaskit",
                 })
                 .then(function (engineInitializer) {
                     return engineInitializer.initializeEngine();
