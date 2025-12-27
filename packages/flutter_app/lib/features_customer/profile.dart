@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -381,6 +381,36 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 : Colors.red.shade900.withOpacity(0.2),
             child: Column(
               children: [
+                ListTile(
+                  leading: Icon(
+                    Icons.swap_horiz,
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.orange.shade700
+                        : Colors.orange.shade300,
+                  ),
+                  title: Text(
+                    'Transfer Ownership',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.orange.shade700
+                          : Colors.orange.shade300,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Transfer ownership to another member',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.grey.shade700
+                          : Colors.grey.shade400,
+                    ),
+                  ),
+                  onTap: () =>
+                      _showTransferOwnershipDialog(context, ref, currentOrg),
+                ),
+                Divider(height: 1, color: Colors.grey.shade300),
                 ListTile(
                   leading: Icon(
                     Icons.delete_forever,
@@ -790,6 +820,304 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     } else {
       nameController.dispose();
     }
+  }
+
+  Future<void> _showTransferOwnershipDialog(
+      BuildContext context, WidgetRef ref, Organization currentOrg) async {
+    // Fetch organization members
+    List<Map<String, dynamic>> members = [];
+    try {
+      print('Fetching members for org: ${currentOrg.id}');
+      final response = await ApiClient.I.getOrganizationMembers(currentOrg.id);
+      print('Members response: $response');
+
+      // The API returns {data: [...], count: n}
+      final dataList = response['data'];
+      if (dataList != null && dataList is List) {
+        members = dataList.cast<Map<String, dynamic>>();
+      }
+
+      // Remove current user from the list
+      final meData = ref.read(authStateProvider).value;
+      final myUserId = meData?['id'];
+      print('My user ID: $myUserId');
+      members = members.where((m) => m['user_id'] != myUserId).toList();
+      print('Filtered members count: ${members.length}');
+    } catch (e, stackTrace) {
+      print('Error fetching members: $e');
+      print('Stack trace: $stackTrace');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading members: $e')),
+        );
+      }
+      return;
+    }
+
+    if (members.isEmpty) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('No Members Available'),
+            content: const Text(
+              'You need to invite at least one other member to your organization before you can transfer ownership. '
+              'Go to Team Management to invite members.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
+    String? selectedUserId;
+    final nameController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.swap_horiz,
+                color: Theme.of(context).brightness == Brightness.light
+                    ? Colors.orange.shade700
+                    : Colors.orange.shade300,
+              ),
+              const SizedBox(width: 8),
+              const Text('Transfer Ownership?'),
+            ],
+          ),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.light
+                          ? Colors.orange.shade50
+                          : Colors.orange.shade900.withOpacity(0.3),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? Colors.orange.shade200
+                            : Colors.orange.shade700,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber,
+                          color:
+                              Theme.of(context).brightness == Brightness.light
+                                  ? Colors.orange.shade700
+                                  : Colors.orange.shade300,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This action cannot be undone. Only the new owner can transfer ownership again.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade200,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Select the new owner:',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedUserId,
+                    decoration: const InputDecoration(
+                      labelText: 'New Owner',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: members.map((member) {
+                      final email = member['email'] ?? '';
+                      final firstName = member['first_name'] ?? '';
+                      final lastName = member['last_name'] ?? '';
+                      final role = member['role'] ?? '';
+                      final displayName =
+                          (firstName.isEmpty && lastName.isEmpty)
+                              ? email
+                              : '$firstName $lastName ($email)'.trim();
+
+                      return DropdownMenuItem<String>(
+                        value: member['user_id'],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              displayName,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            Text(
+                              'Current role: $role',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedUserId = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a new owner';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'To confirm, please type the organization name:',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Organization Name',
+                      hintText: 'Type "${currentOrg.name}" to confirm',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the organization name';
+                      }
+                      if (value != currentOrg.name) {
+                        return 'Name does not match';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                nameController.dispose();
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() ?? false) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Colors.orange.shade700
+                        : Colors.orange.shade800,
+              ),
+              child: const Text('Transfer Ownership'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed ?? false) {
+      if (context.mounted && selectedUserId != null) {
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+
+        try {
+          await ApiClient.I.transferOrganizationOwnership(
+            organizationId: currentOrg.id,
+            newOwnerId: selectedUserId!,
+            confirmOrganizationName: nameController.text,
+          );
+
+          // Refresh organizations and auth state
+          await ref.read(organizationsProvider.notifier).fetch();
+          await ref.read(authStateProvider.notifier).refresh();
+
+          if (context.mounted) {
+            // Dismiss loading
+            Navigator.of(context).pop();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Ownership of "${currentOrg.name}" has been transferred'),
+                backgroundColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Colors.green.shade700
+                        : Colors.green.shade800,
+              ),
+            );
+
+            // Reload page on web to ensure fresh state
+            if (kIsWeb) {
+              html.window.location.reload();
+            }
+          }
+        } catch (e) {
+          if (context.mounted) {
+            // Dismiss loading
+            Navigator.of(context).pop();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error transferring ownership: $e'),
+                backgroundColor:
+                    Theme.of(context).brightness == Brightness.light
+                        ? Colors.red.shade700
+                        : Colors.red.shade800,
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    nameController.dispose();
   }
 
   Widget _buildListTile({

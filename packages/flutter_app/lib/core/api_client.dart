@@ -298,4 +298,22 @@ class ApiClient {
     );
     return (resp.data as Map).cast<String, dynamic>();
   }
+
+  /// Transfer organization ownership to another member. Only the owner can perform this action.
+  /// This action is irreversible and requires the organization name to be provided for confirmation.
+  /// The target user will be automatically promoted to admin if they aren't already.
+  Future<Map<String, dynamic>> transferOrganizationOwnership({
+    required String organizationId,
+    required String newOwnerId,
+    required String confirmOrganizationName,
+  }) async {
+    final resp = await _dio.post(
+      '/api/v1/organizations/$organizationId/transfer-ownership/',
+      data: {
+        'new_owner_id': newOwnerId,
+        'confirm_organization_name': confirmOrganizationName,
+      },
+    );
+    return (resp.data as Map).cast<String, dynamic>();
+  }
 }

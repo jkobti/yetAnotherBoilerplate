@@ -25,6 +25,8 @@ ARG FIREBASE_AUTH_DOMAIN
 ARG FIREBASE_STORAGE_BUCKET
 
 RUN flutter build web -t lib/main_admin.dart --release --web-renderer canvaskit \
+  --base-href="/" \
+  --pwa-strategy=none \
   --dart-define="API_BASE_URL=${API_BASE_URL:-http://localhost:8000}" \
   --dart-define="PUSH_NOTIFICATIONS_ENABLED=${PUSH_NOTIFICATIONS_ENABLED:-false}" \
   --dart-define="FIREBASE_API_KEY=${FIREBASE_API_KEY:-}" \

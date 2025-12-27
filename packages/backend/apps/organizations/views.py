@@ -618,6 +618,127 @@ class OrganizationCloseView(APIView):
         )
 
 
+class OrganizationTransferOwnershipView(APIView):
+    """Transfer organization ownership to another member (owner only, irreversible)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, org_id):
+        org = get_object_or_404(Organization, id=org_id, members=request.user)
+
+        # Only the owner can transfer ownership
+        if request.user != org.owner:
+            return Response(
+                {"error": "Only the organization owner can transfer ownership."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Cannot transfer personal workspaces (B2C mode)
+        if org.is_personal:
+            return Response(
+                {"error": "Cannot transfer ownership of personal workspaces"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate request data
+        new_owner_id = request.data.get("new_owner_id")
+        confirm_organization_name = request.data.get("confirm_organization_name")
+
+        if not new_owner_id:
+            return Response(
+                {"error": "new_owner_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not confirm_organization_name:
+            return Response(
+                {"error": "confirm_organization_name is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Verify organization name matches
+        if confirm_organization_name != org.name:
+            return Response(
+                {
+                    "error": "Organization name does not match. Please enter the exact name to confirm."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get the new owner user
+        User = get_user_model()
+        try:
+            new_owner = User.objects.get(id=new_owner_id)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Verify new owner is a member of the organization
+        try:
+            new_owner_membership = Membership.objects.get(
+                user=new_owner, organization=org
+            )
+        except Membership.DoesNotExist:
+            return Response(
+                {"error": "User must be a member of the organization"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Cannot transfer to yourself
+        if new_owner == request.user:
+            return Response(
+                {"error": "Cannot transfer ownership to yourself"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        old_owner = org.owner
+        old_owner_name = (
+            f"{old_owner.first_name} {old_owner.last_name}".strip() or old_owner.email
+        )
+        new_owner_name = (
+            f"{new_owner.first_name} {new_owner.last_name}".strip() or new_owner.email
+        )
+
+        # Update organization owner
+        org.owner = new_owner
+        org.save(update_fields=["owner"])
+
+        # Ensure new owner has admin role
+        if new_owner_membership.role != Membership.ROLE_ADMIN:
+            new_owner_membership.role = Membership.ROLE_ADMIN
+            new_owner_membership.save(update_fields=["role"])
+
+        # Create notifications for both parties
+        Notification.objects.create(
+            recipient=old_owner,
+            type="ownership_transferred_from",
+            message=f"You transferred ownership of {org.name} to {new_owner_name}",
+            target_url=f"/organizations/{org.id}",
+        )
+
+        Notification.objects.create(
+            recipient=new_owner,
+            type="ownership_transferred_to",
+            message=f"You are now the owner of {org.name} (transferred from {old_owner_name})",
+            target_url=f"/organizations/{org.id}",
+        )
+
+        return Response(
+            {
+                "message": "Ownership transferred successfully",
+                "data": {
+                    "organization_id": str(org.id),
+                    "organization_name": org.name,
+                    "old_owner_id": str(old_owner.id),
+                    "new_owner_id": str(new_owner.id),
+                },
+            }
+        )
+
+
 class OrganizationInviteRevokeView(APIView):
     """Revoke/cancel a pending organization invite (admin only)."""
 

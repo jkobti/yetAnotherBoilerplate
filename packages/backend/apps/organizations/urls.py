@@ -14,6 +14,7 @@ from .views import (
     OrganizationListView,
     OrganizationMembersView,
     OrganizationSwitchView,
+    OrganizationTransferOwnershipView,
 )
 
 app_name = "organizations"
@@ -26,6 +27,11 @@ urlpatterns = [
     path("<uuid:org_id>/switch/", OrganizationSwitchView.as_view(), name="switch"),
     path("<uuid:org_id>/leave/", OrganizationLeaveView.as_view(), name="leave"),
     path("<uuid:org_id>/close/", OrganizationCloseView.as_view(), name="close"),
+    path(
+        "<uuid:org_id>/transfer-ownership/",
+        OrganizationTransferOwnershipView.as_view(),
+        name="transfer-ownership",
+    ),
     path("<uuid:org_id>/members/", OrganizationMembersView.as_view(), name="members"),
     path(
         "<uuid:org_id>/members/<uuid:membership_id>/",
